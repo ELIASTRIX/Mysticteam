@@ -1,0 +1,2999 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mystic University - ระบบจัดการแบบบูรณาการ</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Google Fonts (Optimized Loading) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400..800;1,400..800&family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" defer></script>
+
+    <!-- SheetJS (xlsx) library for Excel export -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <!-- Custom Styles -->
+    <style>
+        :root {
+            /* กำหนด Font เริ่มต้นของ Bootstrap */
+            --bs-body-font-family: 'Sarabun', sans-serif;
+            /* สีหลักของธีม (จะถูกเปลี่ยนโดย JavaScript) */
+            --theme-color-primary: #ffc107; /* สีเหลืองทอง */
+            --theme-color-secondary: #0c1427; /* สีน้ำเงินเข้ม */
+        }
+        body {
+            background-color: #0c1427;
+            background-image: url('https://cdn.discordapp.com/attachments/1298929296504651848/1386567253721350154/494985656_1314687653784288_363699581179888215_n.png?ex=685a2ce2&is=6858db62&hm=b4f885823718451577aa5b57cf0b3b271ac014b163aceee67d10ed47fec45b65&');
+            background-size: cover;
+            background-position: center center;
+            background-attachment: fixed;
+            color: #FFFFFF; 
+            margin: 0;
+        }
+        .font-mystic { font-family: 'EB Garamond', serif; }
+        .card {
+            background-color: rgba(23, 37, 84, 0.88);
+            border: 1px solid rgba(253, 224, 71, 0.2);
+            backdrop-filter: blur(8px);
+        }
+        .btn-theme {
+             background-color: var(--theme-color-primary);
+             color: var(--theme-color-secondary);
+             border: 1px solid var(--theme-color-primary);
+        }
+        .btn-theme:hover {
+            opacity: 0.9;
+        }
+        .btn-outline-theme {
+             color: var(--theme-color-primary);
+             border-color: var(--theme-color-primary);
+        }
+        .btn-outline-theme:hover {
+            background-color: var(--theme-color-primary);
+            color: var(--theme-color-secondary);
+        }
+        .modal-backdrop-custom {
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+        #modal-body, .form-label, .user-list-name, .list-item-title, .nav-link, h1, h2, h3, h4, h5, h6, p, label, .form-check-label { 
+            color: #FFFFFF; 
+        }
+        .user-list-email, .list-item-subtitle, .dashboard-header-subtext, .status-meta {
+            color: #FFFFFF; 
+            opacity: 0.8;
+        }
+        .nav-link.active {
+            background-color: var(--theme-color-primary) !important;
+            color: var(--theme-color-secondary) !important;
+        }
+        .nav-link:not(.active):hover { color: var(--theme-color-primary) !important; }
+
+        .profile-pic {
+            width: 80px; height: 80px;
+            object-fit: cover; border-radius: 50%;
+            border: 2px solid var(--theme-color-primary);
+        }
+        .sidebar-profile-pic {
+            width: 60px; height: 60px;
+            object-fit: cover; border-radius: 50%;
+            border: 2px solid var(--theme-color-primary);
+        }
+        .theme-text, .text-warning { color: var(--theme-color-primary) !important; }
+        .dashboard-header-text { color: #FFFFFF; }
+        .student-list-modal-card {
+            background-color: rgba(23, 37, 84, 0.95);
+            border: 1px solid rgba(253, 224, 71, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .text-white-50 {
+            color: #FFFFFF !important; 
+            opacity: 0.7;
+        }
+        .form-control, .form-select {
+            background-color: #1a2541 !important;
+            color: #FFFFFF !important; 
+            border-color: #4a5568 !important;
+        }
+        .form-control::placeholder {
+            color: #cccccc !important; 
+        }
+        /* Accordion Custom Styles */
+        .accordion-button {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: #FFFFFF;
+        }
+        .accordion-button:not(.collapsed) {
+            background-color: var(--theme-color-primary);
+            color: var(--theme-color-secondary);
+        }
+        .accordion-button:focus {
+            box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25);
+        }
+        .accordion-body {
+            background-color: rgba(0,0,0,0.2);
+        }
+        .accordion-item {
+             background-color: transparent;
+             border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body class="min-vh-100">
+
+    <!-- Root container ที่จะใช้แสดงผล View ต่างๆ -->
+    <div id="root">
+        <div class="min-vh-100 d-flex align-items-center justify-content-center">
+             <div class="text-center">
+                <div class="spinner-border text-warning" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3 fs-5">กำลังร่ายเวทเชื่อมต่อ...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal ทั่วไป (อยู่ด้านนอก root) -->
+    <div id="modal-container" class="position-fixed top-0 start-0 w-100 h-100 d-none align-items-center justify-content-center modal-backdrop-custom p-4" style="z-index: 1070;">
+        <div class="card rounded-3 p-4 w-100" style="max-width: 500px;">
+            <h3 id="modal-title" class="fs-4 font-mystic text-warning mb-3"></h3>
+            <div id="modal-body" class="text-start"></div>
+            <div id="modal-actions" class="d-flex justify-content-end gap-2 mt-4"></div>
+        </div>
+    </div>
+
+    <!-- Modal สำหรับแสดงรายชื่อนักเรียน -->
+    <div id="student-list-modal-container" class="position-fixed top-0 start-0 w-100 h-100 d-none align-items-center justify-content-center modal-backdrop-custom p-4" style="z-index: 1060;">
+        <div class="card rounded-3 p-4 w-100 student-list-modal-card" style="max-width: 700px;">
+            <h3 id="student-list-modal-title" class="fs-4 font-mystic text-warning mb-3"></h3>
+            <div id="student-list-modal-body" class="text-start overflow-auto" style="max-height: 70vh;"></div>
+            <div id="student-list-modal-actions" class="d-flex justify-content-between align-items-center w-100 mt-4">
+                <!-- Buttons like Export and Close will be injected here by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+
+    <!-- =============================================================================== -->
+    <!-- HTML TEMPLATES: ส่วนของ Template สำหรับ View ต่างๆ ที่จะถูกดึงไปใช้โดย JavaScript -->
+    <!-- =============================================================================== -->
+
+    <template id="template-login">
+        <div class="min-vh-100 d-flex align-items-center justify-content-center p-4">
+            <div class="w-100" style="max-width: 400px;">
+                 <div class="card rounded-4 p-5">
+                    <div class="text-center mb-4">
+                        <img src="https://cdn.discordapp.com/attachments/1096923075242635464/1206423018935689306/MysticUniversity-Logo-NewVersion.png?ex=685ab2bd&is=6859613d&hm=55baaae3adb619784a3a02aadf7d3ce2414a6b9549457413716093d3ad08670d&" alt="Mystic University Logo" class="mx-auto" style="width: 120px; height: auto;">
+                        <h1 class="font-mystic text-white mt-3" style="font-size: 2.5rem;">Mystic University</h1>
+                        <p class="text-white-50">กรุณาเข้าสู่ระบบ</p>
+                    </div>
+                    <form id="login-form" class="row g-3">
+                        <div class="col-12">
+                            <label for="login-email" class="form-label">Email</label>
+                            <input id="login-email" type="email" placeholder="อีเมล" class="form-control form-control-lg" required>
+                        </div>
+                        <div class="col-12">
+                            <label for="login-password" class="form-label">Password</label>
+                            <input id="login-password" type="password" placeholder="รหัสผ่าน" class="form-control form-control-lg" required>
+                        </div>
+                        <div class="col-12 pt-2">
+                             <button type="submit" class="btn btn-warning w-100 py-2 fs-5 fw-bold">เข้าสู่ประตูมิติ</button>
+                        </div>
+                    </form>
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="#" id="go-to-register" class="text-warning">ยังไม่มีบัญชี?</a>
+                        <a href="#" id="go-to-forgot-password" class="text-white-50 small">ลืมรหัสผ่าน?</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="template-register">
+        <div class="min-vh-100 d-flex align-items-center justify-content-center p-4">
+             <div class="w-100" style="max-width: 400px;">
+                 <div class="card rounded-4 p-5">
+                    <h2 class="font-mystic text-white mb-4 text-center" style="font-size: 2rem;">สมัครเป็นนักศึกษา</h2>
+                    <form id="register-form" class="row g-3">
+                         <div class="col-12">
+                             <label for="register-name" class="form-label">ชื่อ-นามสกุล</label>
+                             <input id="register-name" type="text" class="form-control" required>
+                         </div>
+                         <div class="col-12">
+                             <label for="register-house" class="form-label">สังกัดบ้าน</label>
+                             <select id="register-house" class="form-select" required>
+                                <option value="" disabled selected>เลือกสังกัดบ้าน</option>
+                                <option value="Phoenix">Phoenix (ฟีนิกซ์)</option>
+                                <option value="Liger">Liger (ไลเกอร์)</option>
+                                <option value="Colossal Kraken">Colossal Kraken (คราเคน)</option>
+                                <option value="King Ghidorah">King Ghidorah (กิโดรา)</option>
+                            </select>
+                         </div>
+                         <div class="col-12">
+                              <label for="register-email" class="form-label">Email</label>
+                             <input id="register-email" type="email" class="form-control" required>
+                         </div>
+                         <div class="col-12">
+                             <label for="register-password" class="form-label">Password</label>
+                             <input id="register-password" type="password" class="form-control" required>
+                         </div>
+                         <div class="col-12 pt-2">
+                            <button type="submit" class="btn btn-warning w-100 py-2 fw-bold">ส่งคำร้องขอเข้าศึกษา</button>
+                         </div>
+                    </form>
+                    <p class="text-center mt-3 text-warning-emphasis" style="font-size: 0.8rem;">หมายเหตุ: บัญชีของคุณจะต้องได้รับการอนุมัติจากสภาจอมเวท (Admin) ก่อนจึงจะสามารถเข้าสู่ระบบได้</p>
+                    <div class="text-center mt-3">
+                        <a href="#" id="go-to-login" class="text-warning">กลับไปหน้าเข้าสู่ระบบ</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="template-main">
+        <div class="d-flex vh-100">
+            <!-- Sidebar -->
+            <nav id="sidebar" class="d-flex flex-column p-4" style="width: 280px; background-color: #040814;">
+                <div class="text-center mb-5">
+                     <h1 class="fs-4 font-mystic">Mystic University</h1>
+                </div>
+                <div id="nav-links" class="nav nav-pills flex-column mb-auto"></div>
+                <div id="user-profile-summary" class="mt-auto text-center border-top border-secondary pt-3"></div>
+                <button id="logout-button" class="btn btn-outline-warning w-100 mt-3">ออกจากระบบ</button>
+            </nav>
+
+            <!-- Main Content -->
+            <main id="main-content-area" class="flex-grow-1 p-4 overflow-auto" style="background-color: #0c1427;">
+                <!-- Role specific content will be injected here -->
+            </main>
+        </div>
+    </template>
+    
+    <!-- Role-Specific Page Templates -->
+    <template id="template-admin-dashboard">
+        <h2 class="font-mystic text-warning mb-4 fs-2">ภาพรวมสภา</h2>
+        <div class="row g-4">
+            <div class="col-12">
+                <div class="card p-4 rounded-3 h-100 mb-4">
+                    <h3 class="fs-5 fw-bold mb-3">คำร้องขอเข้าศึกษาที่รออนุมัติ</h3>
+                    <div id="pending-students-list" class="vstack gap-3"></div>
+                </div>
+                <div class="card p-4 rounded-3 h-100 mb-4">
+                    <h3 class="fs-5 fw-bold mb-3">คำขอเลื่อนชั้นปี</h3>
+                    <div id="promotion-requests-list" class="vstack gap-3"></div>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <template id="template-admin-manage-users">
+        <h2 class="font-mystic text-warning mb-4 fs-2">บริหารจัดการผู้ใช้</h2>
+        <div class="row g-4">
+             <div class="col-md-5">
+                 <div class="card p-4 rounded-3 h-100">
+                    <h3 class="fs-5 fw-bold mb-3">ลงทะเบียนศาสตราจารย์</h3>
+                    <form id="create-professor-form" class="vstack gap-3">
+                        <div>
+                            <label for="prof-name" class="form-label">ชื่อศาสตราจารย์</label>
+                            <input type="text" id="prof-name" class="form-control" required>
+                        </div>
+                        <div>
+                            <label for="prof-subject" class="form-label">วิชาที่สังกัด</label>
+                            <select id="prof-subject" class="form-select" required></select>
+                        </div>
+                        <div>
+                            <label for="prof-email" class="form-label">อีเมล</label>
+                            <input type="email" id="prof-email" class="form-control" required>
+                        </div>
+                        <div>
+                            <label for="prof-password" class="form-label">รหัสผ่านชั่วคราว</label>
+                            <input type="password" id="prof-password" class="form-control" required>
+                        </div>
+                        <div class="pt-2">
+                            <button type="submit" class="btn btn-warning w-100 fw-bold">สร้างบัญชี</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <div class="card p-4 rounded-3 h-100">
+                    <h3 class="fs-5 fw-bold mb-3">รายชื่อผู้ใช้ทั้งหมด</h3>
+                    <div id="all-users-container"></div>
+                </div>
+            </div>
+        </div>
+    </template>
+    
+    <template id="template-user-profile">
+        <h2 class="font-mystic text-warning mb-4 fs-2">โปรไฟล์ของฉัน</h2>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="card p-4 rounded-3 text-center">
+                    <h3 class="fs-5 fw-bold mb-3">รูปโปรไฟล์</h3>
+                    <img id="profile-pic-preview" src="https://placehold.co/150x150/0c1427/e0e0e0?text=No+Image" class="profile-pic mx-auto mb-3" alt="Profile Picture">
+                    <form id="profile-pic-form">
+                        <div class="mb-2">
+                            <label for="profile-url" class="form-label">Image URL</label>
+                            <input type="url" id="profile-url" class="form-control" placeholder="https://example.com/image.png">
+                        </div>
+                        <div class="d-flex gap-2">
+                             <button type="button" id="delete-pic-btn" class="btn btn-sm btn-outline-danger w-100">ลบรูป</button>
+                             <button type="submit" class="btn btn-sm btn-warning w-100">บันทึกรูป</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="col-md-8">
+                 <div class="card p-4 rounded-3">
+                     <h3 class="fs-5 fw-bold mb-3">เปลี่ยนรหัสผ่าน</h3>
+                     <form id="change-password-form" class="vstack gap-3">
+                        <div>
+                            <label for="new-password" class="form-label">รหัสผ่านใหม่</label>
+                            <input type="password" id="new-password" class="form-control" required>
+                        </div>
+                        <div>
+                            <label for="confirm-password" class="form-label">ยืนยันรหัสผ่านใหม่</label>
+                            <input type="password" id="confirm-password" class="form-control" required>
+                        </div>
+                        <div class="pt-2">
+                            <button type="submit" class="btn btn-warning w-100 fw-bold">เปลี่ยนรหัสผ่าน</button>
+                        </div>
+                    </form>
+                 </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="template-professor-manage-classes">
+        <div id="professor-dashboard-header" class="d-flex align-items-center mb-4 p-3 rounded-3" style="background-color: rgba(0,0,0,0.2);">
+            <img id="prof-subject-logo" src="" alt="Subject Logo" style="width: 70px; height: 70px; margin-right: 20px;">
+            <div>
+                <h2 class="font-mystic theme-text mb-0 fs-2">จัดการคลาสเรียน</h2>
+                <h3 id="prof-subject-name" class="fs-5 text-white-50"></h3>
+            </div>
+        </div>
+         <div class="row g-4">
+            <div class="col-md-5">
+                <div class="card p-4 rounded-3 mb-4">
+                    <h3 class="fs-5 fw-bold mb-3">สร้างคลาสเรียนใหม่</h3>
+                     <form id="create-class-form" class="vstack gap-3">
+                        <div>
+                            <label for="class-name" class="form-label">ชื่อคลาสเรียน</label>
+                            <input type="text" id="class-name" class="form-control" required>
+                        </div>
+                        <div>
+                            <label for="class-year" class="form-label">สำหรับชั้นปี</label>
+                            <select id="class-year" class="form-select" required>
+                                <option value="1">ปี 1</option><option value="2">ปี 2</option><option value="3">ปี 3</option>
+                                <option value="4">ปี 4</option><option value="5">ปี 5</option><option value="6">ปี 6</option>
+                                <option value="7">ปี 7</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="reg-start" class="form-label">เปิดลงทะเบียน</label>
+                            <input type="datetime-local" id="reg-start" class="form-control" required>
+                        </div>
+                        <div>
+                            <label for="reg-end" class="form-label">ปิดลงทะเบียน</label>
+                            <input type="datetime-local" id="reg-end" class="form-control" required>
+                        </div>
+                         <div>
+                            <label for="class-time" class="form-label">เวลาที่สอน</label>
+                            <input type="datetime-local" id="class-time" class="form-control" required>
+                        </div>
+                        <div class="pt-2">
+                            <button type="submit" class="btn btn-theme w-100 fw-bold">สร้างคลาส</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="col-md-7">
+                 <div class="card p-4 rounded-3 mb-4">
+                    <h3 class="fs-5 fw-bold mb-3">คลาสเรียนของคุณ</h3>
+                    <div id="professor-classes-list" class="vstack gap-3"></div>
+                 </div>
+                  <div class="card p-4 rounded-3">
+                    <h3 class="fs-5 fw-bold mb-3">คลาสที่จบไปแล้ว</h3>
+                    <div id="professor-finished-classes-list" class="vstack gap-3"></div>
+                 </div>
+            </div>
+        </div>
+    </template>
+    
+    <template id="template-professor-manage-exams">
+        <div id="professor-dashboard-header" class="d-flex align-items-center mb-4 p-3 rounded-3" style="background-color: rgba(0,0,0,0.2);">
+            <img id="prof-subject-logo" src="" alt="Subject Logo" style="width: 70px; height: 70px; margin-right: 20px;">
+            <div>
+                <h2 class="font-mystic theme-text mb-0 fs-2">จัดการคลาสสอบ</h2>
+                <h3 id="prof-subject-name" class="fs-5 text-white-50"></h3>
+            </div>
+        </div>
+         <div class="row g-4">
+            <div class="col-md-5">
+                <div class="card p-4 rounded-3">
+                    <h3 class="fs-5 fw-bold mb-3">สร้างคลาสสอบใหม่</h3>
+                     <form id="create-exam-form" class="vstack gap-3">
+                        <div>
+                            <label for="exam-name" class="form-label">ชื่อคลาสสอบ</label>
+                            <input type="text" id="exam-name" class="form-control" required>
+                        </div>
+                        <div>
+                            <label for="exam-year" class="form-label">สำหรับชั้นปี</label>
+                            <select id="exam-year" class="form-select" required>
+                                <option value="1">ปี 1</option><option value="2">ปี 2</option><option value="3">ปี 3</option>
+                                <option value="4">ปี 4</option><option value="5">ปี 5</option><option value="6">ปี 6</option>
+                                <option value="7">ปี 7</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="exam-reg-start" class="form-label">เปิดลงทะเบียนสอบ</label>
+                            <input type="datetime-local" id="exam-reg-start" class="form-control" required>
+                        </div>
+                        <div>
+                            <label for="exam-reg-end" class="form-label">ปิดลงทะเบียนสอบ</label>
+                            <input type="datetime-local" id="exam-reg-end" class="form-control" required>
+                        </div>
+                         <div>
+                            <label for="exam-time" class="form-label">เวลาที่สอบ</label>
+                            <input type="datetime-local" id="exam-time" class="form-control" required>
+                        </div>
+                        <div class="pt-2">
+                            <button type="submit" class="btn btn-theme w-100 fw-bold">สร้างคลาสสอบ</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="col-md-7">
+                 <div class="card p-4 rounded-3 mb-4">
+                    <h3 class="fs-5 fw-bold mb-3">คลาสสอบของคุณ</h3>
+                    <div id="professor-exams-list" class="vstack gap-3"></div>
+                 </div>
+                 <div class="card p-4 rounded-3">
+                    <h3 class="fs-5 fw-bold mb-3">คลาสสอบที่จบไปแล้ว</h3>
+                    <div id="professor-finished-exams-list" class="vstack gap-3"></div>
+                 </div>
+            </div>
+        </div>
+    </template>
+    
+    <template id="template-professor-manage-interns">
+         <div id="professor-dashboard-header" class="d-flex align-items-center mb-4 p-3 rounded-3" style="background-color: rgba(0,0,0,0.2);">
+            <img id="prof-subject-logo" src="" alt="Subject Logo" style="width: 70px; height: 70px; margin-right: 20px;">
+            <div>
+                <h2 class="font-mystic theme-text mb-0 fs-2">จัดการนักศึกษาฝึกงาน (ผู้ช่วยสอน)</h2>
+                <h3 id="prof-subject-name" class="fs-5 text-white-50"></h3>
+            </div>
+        </div>
+        <div class="row g-4">
+            <div class="col-lg-5">
+                <div class="card p-4 rounded-3 mb-4">
+                    <h3 class="fs-5 fw-bold mb-3">เพิ่มนักศึกษาฝึกงาน</h3>
+                    <form id="add-intern-form" class="vstack gap-3">
+                        <div>
+                            <label for="intern-uid" class="form-label">Student UID</label>
+                            <input type="text" id="intern-uid" class="form-control" placeholder="วาง UID ของนักศึกษาที่นี่" required>
+                        </div>
+                        <div>
+                           <label class="form-label">ขอบเขตรายวิชา</label>
+                           <div class="form-check">
+                               <input class="form-check-input" type="radio" name="subjectScope" id="all-subjects" value="all" checked>
+                               <label class="form-check-label" for="all-subjects">ทุกวิชาที่ดูแล</label>
+                           </div>
+                           <div class="form-check">
+                               <input class="form-check-input" type="radio" name="subjectScope" id="specific-subjects" value="specific">
+                               <label class="form-check-label" for="specific-subjects">เลือกวิชาเฉพาะ</label>
+                           </div>
+                           <div id="specific-subjects-container" class="mt-2 d-none">
+                               <!-- Checkboxes will be inserted here by JS -->
+                           </div>
+                        </div>
+                        <div class="pt-2">
+                             <button type="submit" class="btn btn-theme w-100 fw-bold">เพิ่มนักศึกษาฝึกงาน</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <div class="card p-4 rounded-3">
+                    <h3 class="fs-5 fw-bold mb-3">นักศึกษาฝึกงานปัจจุบัน</h3>
+                    <div id="interns-list" class="vstack gap-3"></div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="template-intern-approve-homework">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                 <h2 class="font-mystic text-warning fs-2 mb-0">อนุมัติการบ้าน (นักศึกษาที่ลา)</h2>
+                 <p id="internship-subject-display" class="text-white-50 mb-0"></p>
+            </div>
+        </div>
+        <div id="homework-approval-container" class="vstack gap-4">
+            <!-- Homework lists will be rendered here -->
+        </div>
+    </template>
+
+    <template id="template-student-dashboard">
+         <div id="student-dashboard-header" class="d-flex align-items-center mb-4 p-3 rounded-3">
+            <img id="student-house-logo" src="" alt="House Logo" style="width: 80px; height: auto; margin-right: 20px;">
+            <div>
+                <h2 class="font-mystic dashboard-header-text mb-0 fs-2">Dashboard นักศึกษา</h2>
+                <h3 id="student-house-name" class="fs-5 dashboard-header-subtext"></h3>
+            </div>
+        </div>
+        <div class="card p-4 rounded-3 mb-4">
+            <h3 class="fs-5 fw-bold mb-3">คะแนนรายวิชา</h3>
+            <div id="student-scores" class="row g-3"></div>
+        </div>
+        <div class="card p-4 rounded-3">
+            <h3 class="fs-5 fw-bold mb-3">การขอเลื่อนชั้นปี</h3>
+            <p id="promotion-status-text" class="text-white-50">คุณต้องสอบผ่านทุกวิชาในชั้นปีปัจจุบันก่อนจึงจะสามารถยื่นคำขอเลื่อนชั้นปีได้</p>
+            <button id="request-promotion-btn" class="btn btn-warning w-auto fw-bold">ยื่นคำขอเลื่อนชั้นปี</button>
+        </div>
+    </template>
+    
+    <template id="template-student-register-class">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="font-mystic text-warning fs-2 mb-0">ลงทะเบียนเรียน</h2>
+            <button class="btn btn-outline-warning btn-sm" onclick="window.app.loadPageContent('student-register-class')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+                โหลดใหม่
+            </button>
+        </div>
+        <div class="card p-4 rounded-3">
+            <h3 class="fs-5 fw-bold mb-3">รายวิชาที่เปิดให้ลงทะเบียน (ชั้นปี <span id="student-year-display"></span>)</h3>
+            <div id="available-classes-list" class="vstack gap-3"></div>
+        </div>
+    </template>
+    
+    <template id="template-student-register-exam">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="font-mystic text-warning fs-2 mb-0">ลงทะเบียนสอบ</h2>
+            <button class="btn btn-outline-warning btn-sm" onclick="window.app.loadPageContent('student-register-exam')">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-clockwise" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+                โหลดใหม่
+            </button>
+        </div>
+        <div class="card p-4 rounded-3">
+             <h3 class="fs-5 fw-bold mb-3">รายวิชาที่เปิดให้ลงทะเบียนสอบ (ชั้นปี <span id="student-exam-year-display"></span>)</h3>
+            <div id="available-exams-list" class="vstack gap-3"></div>
+        </div>
+    </template>
+
+    <template id="template-student-attendance-history">
+        <h2 class="font-mystic text-warning mb-4 fs-2">ประวัติการเข้าเรียน</h2>
+        <div id="attendance-history-container" class="vstack gap-4"></div>
+    </template>
+
+    <template id="template-student-trade-scores">
+        <h2 class="font-mystic text-warning mb-4 fs-2">เทรดคะแนน</h2>
+        <div class="row g-4">
+            <div class="col-md-5">
+                <div class="card p-4 rounded-3 h-100">
+                    <h3 class="fs-5 fw-bold mb-3">เริ่มการเทรด</h3>
+                    <div class="mb-3">
+                        <p class="mb-1">UID ของคุณ (สำหรับให้เพื่อน):</p>
+                        <div class="input-group">
+                            <input type="text" id="my-uid" class="form-control" readonly>
+                            <button class="btn btn-outline-secondary" id="copy-uid-btn">คัดลอก</button>
+                        </div>
+                    </div>
+                    <form id="initiate-trade-form" class="vstack gap-3">
+                        <div>
+                            <label for="recipient-uid" class="form-label">UID ของผู้รับ</label>
+                            <input type="text" id="recipient-uid" class="form-control" required>
+                        </div>
+                        <div>
+                            <label for="trade-subject" class="form-label">วิชาที่จะเทรด</label>
+                            <select id="trade-subject" class="form-select" required></select>
+                        </div>
+                        <div>
+                            <label for="trade-amount" class="form-label">จำนวนคะแนน (1-4)</label>
+                            <input type="number" id="trade-amount" class="form-control" min="1" max="4" required>
+                        </div>
+                        <div class="pt-2">
+                            <button type="submit" class="btn btn-warning w-100 fw-bold">ส่งคำขอเทรด</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <div class="card p-4 rounded-3 mb-4">
+                    <h3 class="fs-5 fw-bold mb-3">คำขอที่ส่งถึงคุณ</h3>
+                    <div id="incoming-trades-list" class="vstack gap-3"></div>
+                </div>
+                <div class="card p-4 rounded-3">
+                    <h3 class="fs-5 fw-bold mb-3">คำขอที่รอดำเนินการ</h3>
+                    <div id="outgoing-trades-list" class="vstack gap-3"></div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+
+    <!-- =================================================================== -->
+    <!-- Firebase SDK & Application Logic                                    -->
+    <!-- =================================================================== -->
+    <script type="module">
+        import { initializeApp, getApp, getApps } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, updatePassword, sendPasswordResetEmail, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, onSnapshot, serverTimestamp, updateDoc, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // --- Firebase Configuration ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAmnPloJupCSsK9rT_I895-hnZHcYrhjHI",
+            authDomain: "mysticuniversityportal.firebaseapp.com",
+            projectId: "mysticuniversityportal",
+            storageBucket: "mysticuniversityportal.appspot.com",
+            messagingSenderId: "56404637568",
+            appId: "1:56404637568:web:2af0fe95eca1a946827365"
+        };
+        
+        // --- Application Constants ---
+        const CONSTANTS = {
+            SUBJECTS: {
+                "วิชาแปลงกายและสัตว์วิเศษ": { logo: "https://cdn.discordapp.com/attachments/1330346385521901618/1330346497035862107/Logo-Professor-Beasts.png?ex=685aa679&is=685954f9&hm=e0ba542e4c087bf9ebe2dfb7776a429853b07d63fa773612ed51f949196aa5cb&", primaryColor: "#A0522D", secondaryColor: "#FFFFFF" },
+                "วิชาคาถา": { logo: "https://cdn.discordapp.com/attachments/1330346385521901618/1330346563758985276/Logo-Professor-Charm.png?ex=685aa689&is=68595509&hm=c20390f4db87c47a181f6d861de4828776537094d037f0bffe2d4360c3ebd70d&", primaryColor: "#4169E1", secondaryColor: "#FFFFFF" },
+                "วิชาป้องกันตัวจากศาสตร์มืด": { logo: "https://cdn.discordapp.com/attachments/1330346385521901618/1330346617173315584/Logo-Professor-Defence_Against_the_Dark_Arts.png?ex=685aa696&is=68595516&hm=214dd2596e0142178c4d39984df10c8c43e95c18ad76fe6e7d76bb7b0399b5ea&", primaryColor: "#B22222", secondaryColor: "#FFFFFF" },
+                "วิชาสมุนไพร": { logo: "https://cdn.discordapp.com/attachments/1330346385521901618/1330346652187365427/Logo-Professor-Herbology.png?ex=685aa69e&is=6859551e&hm=9b810a7908733d1f4ed69d5a3bead9222616dc92c87d98be2bc85ab8eb440655&", primaryColor: "#228B22", secondaryColor: "#FFFFFF" },
+                "วิชาปรุงยา": { logo: "https://cdn.discordapp.com/attachments/1330346385521901618/1378980221943808040/Logo-Professor-Potion.png?ex=685a4269&is=6858f0e9&hm=eb91e984a91945c40889309a8cc6b1a4599bd8eee3a679cdffcc0e6628618b7f&", primaryColor: "#4B0082", secondaryColor: "#FFFFFF" },
+                "วิชาการบินและชมรม": { logo: "https://cdn.discordapp.com/attachments/1330346385521901618/1330346525636956180/Logo-Professor-BroomClass.png?ex=685aa680&is=68595500&hm=ef78fbcd8dc9566d3d19a7cd816eccf4bff46216cf55e4eb7e14e62717d68fbd&", primaryColor: "#87CEEB", secondaryColor: "#000000" } 
+            },
+            HOUSES: {
+                 "Phoenix": { logo: "https://cdn.discordapp.com/attachments/1096923075242635464/1206423019682009149/Mystic-HouseChest-Pheonix-01.png?ex=685ab2be&is=6859613e&hm=0fa12146e5e37a9817797664e9e9d85567a79f0ff0c0c15b381392ab410ff5dd&", primaryColor: "#D32F2F", secondaryColor: "#FFFFFF" },
+                 "Liger": { logo: "https://cdn.discordapp.com/attachments/1096923075242635464/1206423020323872818/Mystic-HouseChest-Liger.png?ex=685ab2be&is=6859613e&hm=f5c9477a21dfa97fea6412e1c750b46cc44a2628b2f1feb6a77a7b2c18057fc3&", primaryColor: "#FFC107", secondaryColor: "#000000" },
+                 "Colossal Kraken": { logo: "https://cdn.discordapp.com/attachments/1096923075242635464/1206423021691338773/Mystic-HouseChest-Colossal.png?ex=685ab2be&is=6859613e&hm=1b4f0629f0e09bddff9a1af6ffce2f2cec22e4e4d58bf451573e46038641b6a&", primaryColor: "#1976D2", secondaryColor: "#FFFFFF" },
+                 "King Ghidorah": { logo: "https://cdn.discordapp.com/attachments/1096923075242635464/1206423020986564608/Mystic-HouseChest-KingGidorah.png?ex=685ab2be&is=6859613e&hm=665f9e1f52f86c49f45dc77657d2471bb7a1461010719df76c355a6d56c5ba64&", primaryColor: "#388E3C", secondaryColor: "#FFFFFF" }
+            },
+            GRADES: { 'Outstanding': 'O', 'Exceeds Expectations': 'E', 'Acceptable': 'A', 'Poor': 'P', 'Dreadful': 'D', 'Troll': 'T' },
+            ICONS: {
+                'shield': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
+                'book-open': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>',
+                'clipboard-pen-line': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2H10a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V7.5L14.5 2z"/><path d="M12 2v4a2 2 0 0 0 2 2h4"/><path d="M16 18h4"/><path d="M20 14v4"/></svg>',
+                'users': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+                'book-marked': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/><path d="m14 2-4.5 4.5"/></svg>',
+                'user': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+                'history': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>',
+                'check': '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+                'x': '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
+                'repeat': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg>',
+                'briefcase': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>',
+                'user-check': '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>'
+            }
+        };
+
+        /**
+         * Main Application Class
+         */
+        class MysticUniversityApp {
+            constructor(config, constants) {
+                // Initialize Firebase
+                this.app = getApps().length === 0 ? initializeApp(config) : getApp();
+                this.auth = getAuth(this.app);
+                this.db = getFirestore(this.app);
+                
+                this.constants = constants;
+                this.currentUserData = null; 
+                this.unsubscribeListeners = [];
+                
+                this.root = document.getElementById('root');
+                this.init();
+            }
+
+            // --- Path Helpers ---
+            usersCollectionRef() {
+                return collection(this.db, "users");
+            }
+            
+            userDocRef(uid) {
+                return doc(this.db, "users", uid);
+            }
+
+
+            // --- 1. INITIALIZATION ---
+            
+            init() {
+                this.initializeAuthListener();
+            }
+
+            initializeAuthListener() {
+                onAuthStateChanged(this.auth, async (user) => {
+                    this.cleanupListeners(); 
+                    
+                    if (user) {
+                        try {
+                            const userDocRef = this.userDocRef(user.uid);
+                            const userDocSnap = await getDoc(userDocRef);
+
+                            if (userDocSnap.exists()) {
+                                this.currentUserData = { uid: user.uid, ...userDocSnap.data() };
+                                
+                                // Check for internship status for students
+                                if (this.currentUserData.role === 'student') {
+                                    const internDocRef = doc(this.db, "internships", user.uid);
+                                    const internDocSnap = await getDoc(internDocRef);
+                                    this.currentUserData.internship = internDocSnap.exists() ? { id: internDocSnap.id, ...internDocSnap.data() } : null;
+                                }
+
+                                if (this.currentUserData.status === 'active') {
+                                    this.renderView('main');
+                                } else {
+                                    const statusMessage = this.currentUserData.status === 'pending' 
+                                        ? 'บัญชีของคุณกำลังรอการอนุมัติ' 
+                                        : `สถานะบัญชีของคุณคือ '${this.currentUserData.status}' กรุณาติดต่อผู้ดูแล`;
+                                    await signOut(this.auth);
+                                    this.showModal('สถานะบัญชี', statusMessage);
+                                    this.renderView('login');
+                                }
+                            } else {
+                                console.log(`User ${user.uid} exists in Auth but not in Firestore. Signing out.`);
+                                await signOut(this.auth);
+                                this.renderView('login');
+                            }
+                        } catch (error) {
+                            console.error("Auth State Change Error:", error);
+                            this.showModal('เกิดข้อผิดพลาดร้ายแรง', 'ไม่สามารถดึงข้อมูลผู้ใช้ได้ กรุณาตรวจสอบการเชื่อมต่อและลองใหม่');
+                            await signOut(this.auth);
+                            this.renderView('login');
+                        }
+                    } else {
+                        this.currentUserData = null;
+                        this.renderView('login');
+                    }
+                });
+            }
+
+
+            // --- 2. UI & RENDERING ---
+
+            renderView(viewName) {
+                this.cleanupListeners();
+                const template = document.getElementById(`template-${viewName}`);
+                if (template) {
+                    this.root.innerHTML = '';
+                    const content = template.content.cloneNode(true);
+                    this.root.appendChild(content);
+                    this.setupView(viewName);
+                } else {
+                    console.error(`View template not found: ${viewName}`);
+                    this.root.innerHTML = `<p class="text-danger text-center p-5">Error: View "${viewName}" not found.</p>`;
+                }
+            }
+            
+            setupView(viewName) {
+                switch (viewName) {
+                    case 'login': this.setupLoginPage(); break;
+                    case 'register': this.setupRegisterPage(); break;
+                    case 'main': this.setupMainApp(); break;
+                }
+            }
+
+            showModal(title, body, actions = []) {
+                const modal = document.getElementById('modal-container');
+                if(!modal) return;
+                modal.querySelector('#modal-title').innerText = title;
+                modal.querySelector('#modal-body').innerHTML = body;
+                const actionsContainer = modal.querySelector('#modal-actions');
+                actionsContainer.innerHTML = '';
+
+                if (actions.length === 0) {
+                    actions.push({ text: 'ปิด', class: 'btn-secondary', handler: () => this.closeModal() });
+                }
+
+                actions.forEach(action => {
+                    const button = document.createElement('button');
+                    button.innerText = action.text;
+                    button.className = `btn ${action.class} fw-bold`;
+                    button.onclick = action.handler;
+                    actionsContainer.appendChild(button);
+                });
+                modal.classList.remove('d-none');
+                modal.classList.add('d-flex');
+            }
+
+            closeModal() {
+                const modal = document.getElementById('modal-container');
+                 if(modal) {
+                    modal.classList.remove('d-flex');
+                    modal.classList.add('d-none');
+                 }
+            }
+
+            escapeHtml(unsafe) {
+                if (typeof unsafe !== 'string') return '';
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+
+            _sanitizeForCss(text) {
+                if (typeof text !== 'string') return '';
+                return text.replace(/[^a-zA-Z0-9-_\u0E00-\u0E7F]/g, '');
+            }
+            
+            getIcon(name) {
+                return this.constants.ICONS[name] || '';
+            }
+            
+            cleanupListeners() {
+                this.unsubscribeListeners.forEach(unsub => unsub());
+                this.unsubscribeListeners = [];
+            }
+            
+            
+            // --- 3. PAGE SETUP & LOGIC ---
+
+            setupLoginPage() {
+                document.getElementById('login-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const email = document.getElementById('login-email').value;
+                    const password = document.getElementById('login-password').value;
+                    try {
+                        await signInWithEmailAndPassword(this.auth, email, password);
+                    } catch (error) {
+                        this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถเข้าสู่ระบบได้: ${this.escapeHtml(error.message)}`);
+                    }
+                });
+                document.getElementById('go-to-register').addEventListener('click', (e) => { e.preventDefault(); this.renderView('register'); });
+                document.getElementById('go-to-forgot-password').addEventListener('click', (e) => { e.preventDefault(); this.handleForgotPassword(); });
+            }
+
+            setupRegisterPage() {
+                document.getElementById('register-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const name = document.getElementById('register-name').value;
+                    const house = document.getElementById('register-house').value;
+                    const email = document.getElementById('register-email').value;
+                    const password = document.getElementById('register-password').value;
+
+                    let secondaryAuth;
+                    try {
+                        const secondaryAppName = 'userCreation';
+                        let secondaryApp;
+                        const existingApp = getApps().find(app => app.name === secondaryAppName);
+                        if (existingApp) {
+                            secondaryApp = existingApp;
+                        } else {
+                            secondaryApp = initializeApp(firebaseConfig, secondaryAppName);
+                        }
+                        secondaryAuth = getAuth(secondaryApp);
+
+                        const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+                        const user = userCredential.user;
+
+                        await setDoc(this.userDocRef(user.uid), {
+                            name, email, house,
+                            role: 'student', year: 1,
+                            status: 'pending',
+                            scores: {},
+                            createdAt: serverTimestamp()
+                        });
+
+                        await signOut(secondaryAuth);
+                        
+                        this.renderView('login');
+                        this.showModal('ส่งคำร้องสำเร็จ', 'คำร้องขอเข้าศึกษาของคุณถูกส่งไปแล้ว โปรดรอการอนุมัติ');
+
+                    } catch (error) {
+                        console.error("Registration Error: ", error);
+                        this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถสมัครได้: ${this.escapeHtml(error.message)}`);
+                    }
+                });
+                document.getElementById('go-to-login').addEventListener('click', (e) => { e.preventDefault(); this.renderView('login'); });
+            }
+
+            setupMainApp() {
+                document.getElementById('logout-button').addEventListener('click', () => signOut(this.auth));
+                this.applyUserTheme();
+                this.renderProfileSummary();
+                this.renderNavLinks();
+            }
+            
+            loadPageContent(pageName) {
+                this.cleanupListeners();
+                const mainContentArea = document.getElementById('main-content-area');
+                const template = document.getElementById(`template-${pageName}`);
+                
+                if (template) {
+                    mainContentArea.innerHTML = '';
+                    mainContentArea.appendChild(template.content.cloneNode(true));
+                    
+                    switch(pageName) {
+                        case 'admin-dashboard': this.loadAdminDashboard(); break;
+                        case 'admin-manage-users': this.loadAdminManageUsers(); break;
+                        case 'professor-manage-classes': this.loadProfessorManageClasses(); break;
+                        case 'professor-manage-exams': this.loadProfessorManageExams(); break;
+                        case 'professor-manage-interns': this.loadProfessorManageInterns(); break;
+                        case 'student-dashboard': this.loadStudentDashboard(); break;
+                        case 'student-register-class': this.loadStudentRegisterClass(); break;
+                        case 'student-register-exam': this.loadStudentRegisterExam(); break;
+                        case 'student-attendance-history': this.loadStudentAttendanceHistory(); break;
+                        case 'student-trade-scores': this.loadStudentTradeScoresPage(); break;
+                        case 'intern-approve-homework': this.loadInternApproveHomework(); break;
+                        case 'user-profile': this.loadUserProfile(); break;
+                    }
+                } else {
+                    mainContentArea.innerHTML = `<p class="text-danger">Content for "${pageName}" not found.</p>`;
+                }
+            }
+            
+            handleForgotPassword() {
+                const body = `
+                    <p class="mb-2">กรุณากรอกอีเมลของคุณเพื่อรีเซ็ตรหัสผ่าน:</p>
+                    <input type="email" id="reset-email-input" class="form-control" placeholder="อีเมลของคุณ">
+                `;
+                const actions = [
+                    { text: 'ยกเลิก', class: 'btn-secondary', handler: () => this.closeModal() },
+                    { text: 'ส่งอีเมลรีเซ็ต', class: 'btn-warning', handler: async () => {
+                        const email = document.getElementById('reset-email-input').value;
+                        if (!email) {
+                            this.showModal('เกิดข้อผิดพลาด', 'กรุณากรอกอีเมล');
+                            return;
+                        }
+                        try {
+                            await sendPasswordResetEmail(this.auth, email);
+                            this.showModal('ส่งสำเร็จ', `อีเมลสำหรับรีเซ็ตรหัสผ่านถูกส่งไปยัง ${this.escapeHtml(email)} แล้ว`); 
+                        } catch (error) {
+                            this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถส่งอีเมลได้: ${this.escapeHtml(error.message)}`);
+                        }
+                    }}
+                ];
+                this.showModal('ลืมรหัสผ่าน', body, actions);
+            }
+            
+
+            // --- 4. UI COMPONENTS & HELPERS ---
+            
+            applyUserTheme() {
+                const { role, subject, house } = this.currentUserData;
+                let theme = { primaryColor: '#ffc107', secondaryColor: '#0c1427' };
+                
+                if(role === 'professor' && this.constants.SUBJECTS[subject]) {
+                    theme = this.constants.SUBJECTS[subject];
+                } else if (role === 'student' && this.constants.HOUSES[house]) {
+                    theme = this.constants.HOUSES[house];
+                }
+                
+                document.documentElement.style.setProperty('--theme-color-primary', theme.primaryColor);
+                document.documentElement.style.setProperty('--theme-color-secondary', theme.secondaryColor);
+            }
+
+            renderProfileSummary() {
+                 const container = document.getElementById('user-profile-summary');
+                 if(!container || !this.currentUserData) return;
+                 
+                 container.innerHTML = `
+                    <img src="${this.currentUserData.photoURL || 'https://placehold.co/80x80/040814/e0e0e0?text=User'}" alt="Profile Picture" class="sidebar-profile-pic mx-auto mb-2">
+                    <p class="fw-bold">${this.escapeHtml(this.currentUserData.name)}</p>
+                    <p class="small theme-text mb-0">${this.currentUserData.role.charAt(0).toUpperCase() + this.currentUserData.role.slice(1)}</p>
+                `;
+            }
+
+            renderNavLinks() {
+                const container = document.getElementById('nav-links');
+                if (!container) return;
+                container.innerHTML = '';
+                
+                let links = [];
+                const { role, internship, isInternshipSupervisor } = this.currentUserData;
+
+                if (role === 'admin') {
+                    links = [ 
+                        { name: 'ภาพรวมสภา', icon: 'shield', page: 'admin-dashboard' },
+                        { name: 'บริหารจัดการผู้ใช้', icon: 'users', page: 'admin-manage-users' },
+                    ];
+                } else if (role === 'professor') {
+                     links = [ 
+                        { name: 'จัดการคลาสเรียน', icon: 'book-open', page: 'professor-manage-classes' },
+                        { name: 'จัดการคลาสสอบ', icon: 'clipboard-pen-line', page: 'professor-manage-exams' },
+                    ];
+                    if (isInternshipSupervisor) {
+                        links.push({ name: 'จัดการนักศึกษาฝึกงาน', icon: 'briefcase', page: 'professor-manage-interns' });
+                    }
+                } else if (role === 'student') {
+                    links = [
+                        { name: 'Dashboard', icon: 'shield', page: 'student-dashboard'}, 
+                        { name: 'ลงทะเบียนเรียน', icon: 'book-marked', page: 'student-register-class' },
+                        { name: 'ลงทะเบียนสอบ', icon: 'clipboard-pen-line', page: 'student-register-exam' },
+                        { name: 'ประวัติการเข้าเรียน', icon: 'history', page: 'student-attendance-history'},
+                        { name: 'เทรดคะแนน', icon: 'repeat', page: 'student-trade-scores'},
+                    ];
+                    if (internship) {
+                        links.push({ name: 'อนุมัติการบ้าน', icon: 'user-check', page: 'intern-approve-homework'});
+                    }
+                }
+                
+                links.push({ name: 'โปรไฟล์ของฉัน', icon: 'user', page: 'user-profile' });
+
+                links.forEach((link, index) => {
+                    const a = document.createElement('a');
+                    a.href = '#';
+                    a.className = `nav-link d-flex align-items-center gap-2 ${index === 0 ? 'active' : ''}`;
+                    a.innerHTML = `${this.getIcon(link.icon)}<span>${link.name}</span>`;
+                    
+                    a.onclick = (e) => {
+                        e.preventDefault();
+                        document.querySelectorAll('#nav-links .nav-link').forEach(l => l.classList.remove('active'));
+                        a.classList.add('active');
+                        this.loadPageContent(link.page);
+                    };
+                    container.appendChild(a);
+                });
+                
+                if (links.length > 0) {
+                    this.loadPageContent(links[0].page);
+                }
+            }
+
+
+            // --- 5. ROLE-SPECIFIC PAGE LOADERS ---
+            
+            loadAdminDashboard() {
+                const pendingList = document.getElementById('pending-students-list');
+                const promotionList = document.getElementById('promotion-requests-list');
+                
+                const qPending = query(this.usersCollectionRef(), where("status", "==", "pending"));
+                const unsubPending = onSnapshot(qPending, (snapshot) => {
+                    pendingList.innerHTML = '';
+                    if(snapshot.empty) {
+                        pendingList.innerHTML = '<p class="text-white-50">ไม่มีคำร้องขอในขณะนี้</p>';
+                        return;
+                    }
+                    snapshot.forEach((docSnap) => {
+                        const student = { id: docSnap.id, ...docSnap.data() };
+                        const item = this.createRequestItem(
+                            `${this.escapeHtml(student.name)} - บ้าน ${this.escapeHtml(student.house)}`,
+                            student.email,
+                            [
+                                { class: 'btn-outline-success', icon: 'check', handler: () => this.updateUserStatus(student.id, 'active', 'อนุมัติผู้ใช้เรียบร้อย') },
+                                { class: 'btn-outline-danger', icon: 'x', handler: () => this.handleRejectAndRemoveUser(student.id, student.name) }
+                            ]
+                        );
+                        pendingList.appendChild(item);
+                    });
+                });
+                this.unsubscribeListeners.push(unsubPending);
+
+                const qPromotion = query(collection(this.db, "promotionRequests"), where("status", "==", "pending"));
+                const unsubPromotion = onSnapshot(qPromotion, async (snapshot) => {
+                    promotionList.innerHTML = '';
+                    if (snapshot.empty) {
+                        promotionList.innerHTML = '<p class="text-white-50">ไม่มีคำขอเลื่อนชั้นปี</p>';
+                        return;
+                    }
+                    const requests = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    const studentIds = [...new Set(requests.map(req => req.studentId))];
+                    const studentNames = await this.getStudentNames(studentIds);
+                    
+                    requests.forEach(req => {
+                        const studentName = studentNames[req.studentId] || 'ไม่พบชื่อ';
+                        const newYear = req.currentYear + 1;
+                        const item = this.createRequestItem(
+                            `${this.escapeHtml(studentName)} ขอเลื่อนเป็นปี ${newYear}`,
+                            `ID: ${req.studentId}`,
+                             [
+                                { class: 'btn-outline-success', icon: 'check', handler: () => this.handlePromotion(req.id, req.studentId, newYear) },
+                                { class: 'btn-outline-danger', icon: 'x', handler: () => this.updatePromotionStatus(req.id, 'rejected', 'ปฏิเสธคำขอเรียบร้อย') }
+                            ]
+                        );
+                        promotionList.appendChild(item);
+                    });
+                });
+                this.unsubscribeListeners.push(unsubPromotion);
+            }
+            
+            loadAdminManageUsers() {
+                 const subjectSelect = document.getElementById('prof-subject');
+                 if (subjectSelect) {
+                    subjectSelect.innerHTML = '<option value="" disabled selected>เลือกวิชา</option>';
+                    Object.keys(this.constants.SUBJECTS).forEach(subject => {
+                        subjectSelect.innerHTML += `<option value="${subject}">${subject}</option>`;
+                    });
+                 }
+                 
+                 document.getElementById('create-professor-form').addEventListener('submit', (e) => this.handleCreateProfessor(e));
+                 this.loadAllUsersList();
+            }
+
+            loadUserProfile() {
+                const user = this.currentUserData;
+                document.getElementById('profile-pic-preview').src = user.photoURL || 'https://placehold.co/150x150/0c1427/e0e0e0?text=No+Image';
+                document.getElementById('profile-url').value = user.photoURL || '';
+
+                document.getElementById('profile-pic-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const newUrl = document.getElementById('profile-url').value;
+                    const userRef = this.userDocRef(user.uid);
+                    await updateDoc(userRef, { photoURL: newUrl });
+                    this.currentUserData.photoURL = newUrl;
+                    this.renderProfileSummary();
+                    this.showModal('สำเร็จ', 'อัปเดตรูปโปรไฟล์เรียบร้อยแล้ว');
+                });
+                
+                document.getElementById('delete-pic-btn').addEventListener('click', async () => {
+                     const userRef = this.userDocRef(user.uid);
+                     await updateDoc(userRef, { photoURL: "" });
+                     this.currentUserData.photoURL = "";
+                     this.loadUserProfile(); 
+                     this.renderProfileSummary();
+                     this.showModal('สำเร็จ', 'ลบรูปโปรไฟล์เรียบร้อยแล้ว');
+                });
+
+                document.getElementById('change-password-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const newPassword = document.getElementById('new-password').value;
+                    const confirmPassword = document.getElementById('confirm-password').value;
+                    if (newPassword.length < 6) {
+                        this.showModal('รหัสผ่านสั้นเกินไป', 'กรุณาตั้งรหัสผ่านอย่างน้อย 6 ตัวอักษร'); return;
+                    }
+                    if (newPassword !== confirmPassword) {
+                        this.showModal('รหัสผ่านไม่ตรงกัน', 'กรุณายืนยันรหัสผ่านใหม่ให้ตรงกัน'); return;
+                    }
+                    try {
+                        await updatePassword(this.auth.currentUser, newPassword);
+                        this.showModal('สำเร็จ', 'เปลี่ยนรหัสผ่านเรียบร้อยแล้ว');
+                        e.target.reset();
+                    } catch (error) {
+                         this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถเปลี่ยนรหัสผ่านได้: ${this.escapeHtml(error.message)}`); 
+                    }
+                });
+            }
+
+            loadProfessorManageClasses() {
+                const subject = this.currentUserData.subject;
+                const theme = this.constants.SUBJECTS[subject] || {};
+                const header = document.querySelector('#professor-dashboard-header');
+                if (header) {
+                    header.querySelector('#prof-subject-logo').src = theme.logo || '';
+                    header.querySelector('#prof-subject-name').innerText = subject;
+                }
+                
+                document.getElementById('create-class-form').addEventListener('submit', (e) => this.handleCreateClass(e));
+                
+                const activeListContainer = document.getElementById('professor-classes-list');
+                const finishedListContainer = document.getElementById('professor-finished-classes-list');
+                const q = query(collection(this.db, "classes"), 
+                    where("professorId", "==", this.currentUserData.uid),
+                    where("subject", "==", this.currentUserData.subject)
+                );
+                
+                const unsubscribeClasses = onSnapshot(q, (snapshot) => {
+                    const activeClasses = [];
+                    const finishedClasses = [];
+                    snapshot.forEach(docSnap => {
+                        const classData = { id: docSnap.id, ...docSnap.data() };
+                        classData.status === 'finished' ? finishedClasses.push(classData) : activeClasses.push(classData);
+                    });
+                    this.renderClassList(activeClasses, activeListContainer, true);
+                    this.renderClassList(finishedClasses, finishedListContainer, false);
+                });
+                
+                this.unsubscribeListeners.push(unsubscribeClasses);
+            }
+            
+            loadProfessorManageExams() {
+                const subject = this.currentUserData.subject;
+                const theme = this.constants.SUBJECTS[subject] || {};
+                const header = document.querySelector('#professor-dashboard-header');
+                if (header) {
+                    header.querySelector('#prof-subject-logo').src = theme.logo || '';
+                    header.querySelector('#prof-subject-name').innerText = subject;
+                }
+                
+                document.getElementById('create-exam-form').addEventListener('submit', (e) => this.handleCreateExam(e));
+                
+                const activeListContainer = document.getElementById('professor-exams-list');
+                const finishedListContainer = document.getElementById('professor-finished-exams-list');
+                const q = query(collection(this.db, "exams"), 
+                    where("professorId", "==", this.currentUserData.uid),
+                    where("subject", "==", this.currentUserData.subject)
+                );
+                
+                const unsubscribeExams = onSnapshot(q, (snapshot) => {
+                    const activeExams = [];
+                    const finishedExams = [];
+                    snapshot.forEach(docSnap => {
+                        const examData = { id: docSnap.id, ...docSnap.data() };
+                        examData.status === 'finished' ? finishedExams.push(examData) : activeExams.push(examData);
+                    });
+                    this.renderExamList(activeExams, activeListContainer, true);
+                    this.renderExamList(finishedExams, finishedListContainer, false);
+                });
+                this.unsubscribeListeners.push(unsubscribeExams);
+            }
+            
+            loadProfessorManageInterns() {
+                const { subject } = this.currentUserData;
+                const theme = this.constants.SUBJECTS[subject] || {};
+
+                const header = document.querySelector('#professor-dashboard-header');
+                if (header) {
+                    header.querySelector('#prof-subject-logo').src = theme.logo || '';
+                    header.querySelector('#prof-subject-name').innerText = subject;
+                }
+                
+                const specificSubjectsContainer = document.getElementById('specific-subjects-container');
+                const subjectCheckboxes = Object.keys(this.constants.SUBJECTS)
+                    .map(subj => `
+                        <div class="form-check">
+                           <input class="form-check-input" type="checkbox" value="${subj}" id="subj-${this._sanitizeForCss(subj)}">
+                           <label class="form-check-label" for="subj-${this._sanitizeForCss(subj)}">${subj}</label>
+                        </div>
+                    `).join('');
+                specificSubjectsContainer.innerHTML = subjectCheckboxes;
+
+                document.querySelectorAll('input[name="subjectScope"]').forEach(radio => {
+                    radio.addEventListener('change', (e) => {
+                        if (e.target.value === 'specific') {
+                            specificSubjectsContainer.classList.remove('d-none');
+                        } else {
+                            specificSubjectsContainer.classList.add('d-none');
+                        }
+                    });
+                });
+
+                document.getElementById('add-intern-form').addEventListener('submit', (e) => this.handleAddIntern(e));
+                this.loadInternsList();
+            }
+
+            setupHomeworkApprovalListener(queries, container) {
+                if (queries.length === 0) {
+                    container.innerHTML = '<p class="text-white-50 small">ไม่มีรายการที่ต้องยืนยันในวิชาที่คุณดูแล</p>';
+                    return;
+                }
+                
+                queries.forEach(q => {
+                    const unsubscribe = onSnapshot(q, async (snapshot) => {
+                        
+                        const enrollmentsBySubject = {};
+                        
+                        if (!snapshot.empty) {
+                             const enrollments = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                             const studentIds = [...new Set(enrollments.map(e => e.studentId))];
+                             const classIds = [...new Set(enrollments.map(e => e.classId))];
+                            
+                             const [studentNameMap, classDataMap] = await Promise.all([
+                                this.getStudentNames(studentIds),
+                                this.getClassData(classIds)
+                            ]);
+                            
+                            enrollments.forEach(enrollment => {
+                                const classInfo = classDataMap.get(enrollment.classId);
+                                if (classInfo) {
+                                    if (!enrollmentsBySubject[classInfo.subject]) {
+                                        enrollmentsBySubject[classInfo.subject] = [];
+                                    }
+                                    enrollmentsBySubject[classInfo.subject].push({
+                                        enrollment,
+                                        studentName: studentNameMap[enrollment.studentId] || 'ไม่พบชื่อ',
+                                        className: classInfo.name
+                                    });
+                                }
+                            });
+                        }
+                        
+                        container.innerHTML = '';
+                        if (Object.keys(enrollmentsBySubject).length === 0) {
+                            container.innerHTML = '<p class="text-white-50 small">ไม่มีรายการที่ต้องยืนยัน</p>';
+                            return;
+                        }
+
+                        for (const subject in enrollmentsBySubject) {
+                             const subjectContainer = document.createElement('div');
+                             subjectContainer.innerHTML = `<h4 class="font-mystic theme-text">${subject}</h4>`;
+                             const listGroup = document.createElement('div');
+                             listGroup.className = 'vstack gap-3';
+                             
+                             enrollmentsBySubject[subject].forEach(itemData => {
+                                const item = document.createElement('div');
+                                item.className = 'd-flex justify-content-between align-items-center p-3 rounded';
+                                item.style.backgroundColor = 'rgba(0,0,0,0.2)';
+                                item.innerHTML = `
+                                    <div>
+                                        <p class="fw-bold mb-0">${this.escapeHtml(itemData.studentName)}</p>
+                                        <p class="small text-white-50 mb-0">คลาส: ${this.escapeHtml(itemData.className)}</p>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-success confirm-homework-btn">ยืนยันการบ้าน</button>
+                                `;
+                                item.querySelector('.confirm-homework-btn').onclick = () => {
+                                    this.handleInternReceivesHomework(itemData.enrollment.id);
+                                };
+                                listGroup.appendChild(item);
+                             });
+                             subjectContainer.appendChild(listGroup);
+                             container.appendChild(subjectContainer);
+                        }
+                    });
+                    this.unsubscribeListeners.push(unsubscribe);
+                });
+            }
+            
+            async loadStudentDashboard() {
+                const { house, uid } = this.currentUserData;
+                const scores = this.currentUserData.scores || {}; // Ensure scores is an object
+                const theme = this.constants.HOUSES[house] || {};
+                
+                const header = document.querySelector('#student-dashboard-header');
+                if (header) {
+                    header.style.backgroundColor = theme.primaryColor;
+                    header.querySelector('#student-house-logo').src = theme.logo || '';
+                    header.querySelector('#student-house-name').innerText = `บ้าน ${house}`;
+                }
+                
+                const scoresContainer = document.getElementById('student-scores');
+                scoresContainer.innerHTML = '';
+                const maxScore = 4;
+                Object.keys(this.constants.SUBJECTS).forEach(subject => {
+                    const score = scores[subject] || 0;
+                    const percentage = (score / maxScore) * 100;
+                    scoresContainer.innerHTML += `
+                        <div class="col-md-4">
+                            <div class="p-2 rounded" style="background-color: rgba(0,0,0,0.2);">
+                                <p class="mb-1 small">${subject}</p>
+                                <div class="progress" style="height: 10px;">
+                                    <div class="progress-bar bg-warning" role="progressbar" style="width: ${percentage}%" aria-valuenow="${score}" aria-valuemin="0" aria-valuemax="${maxScore}"></div>
+                                </div>
+                                <p class="text-end small fw-bold mt-1">${score}/${maxScore}</p>
+                            </div>
+                        </div>
+                    `;
+                });
+
+                const promotionButton = document.getElementById('request-promotion-btn');
+                const promotionText = document.getElementById('promotion-status-text');
+                promotionButton.disabled = true; 
+                promotionText.textContent = 'กำลังตรวจสอบคุณสมบัติ...';
+
+                try {
+                    const requiredExamsQuery = query(collection(this.db, "exams"), where("year", "==", this.currentUserData.year));
+                    const passedExamsQuery = query(collection(this.db, "examEnrollments"), where("studentId", "==", uid), where("passed", "==", true));
+                    
+                    Promise.all([getDocs(requiredExamsQuery), getDocs(passedExamsQuery)]).then(async ([requiredExamsSnapshot, passedExamsSnapshot]) => {
+                        const requiredExamIds = new Set(requiredExamsSnapshot.docs.map(doc => doc.id));
+                        const passedExamIds = new Set(passedExamsSnapshot.docs.map(doc => doc.data().examId));
+
+                        let allPassed = requiredExamIds.size > 0;
+                        for (const reqId of requiredExamIds) {
+                            if (!passedExamIds.has(reqId)) {
+                                allPassed = false;
+                                break;
+                            }
+                        }
+
+                        const pendingRequestQuery = query(collection(this.db, "promotionRequests"), where("studentId", "==", uid), where("status", "==", "pending"));
+                        const hasPendingRequest = !(await getDocs(pendingRequestQuery)).empty;
+
+                        if (hasPendingRequest) {
+                            promotionButton.disabled = true;
+                            promotionButton.textContent = 'ยื่นคำขอแล้ว';
+                            promotionText.textContent = 'คำขอเลื่อนชั้นปีของคุณกำลังรอการอนุมัติ';
+                        } else if (allPassed) {
+                            promotionButton.disabled = false;
+                            promotionButton.textContent = 'ยื่นคำขอเลื่อนชั้นปี';
+                            promotionText.textContent = 'คุณสมบัติของคุณครบถ้วน สามารถยื่นคำขอเลื่อนชั้นปีได้';
+                            
+                            promotionButton.onclick = () => {
+                                const actions = [
+                                    { text: 'ยกเลิก', class: 'btn-secondary', handler: () => this.closeModal() },
+                                    { text: 'ยืนยัน', class: 'btn-warning', handler: () => this.handleRequestPromotion() }
+                                ];
+                                this.showModal('ยืนยันการขอเลื่อนชั้นปี', 'คุณต้องการยื่นคำขอเลื่อนชั้นปีใช่หรือไม่?', actions);
+                            };
+                        } else {
+                            promotionButton.disabled = true;
+                            promotionButton.textContent = 'คุณสมบัติไม่ครบถ้วน';
+                            promotionText.textContent = 'คุณต้องสอบผ่านทุกวิชาในชั้นปีปัจจุบันก่อนจึงจะสามารถยื่นคำขอเลื่อนชั้นปีได้';
+                        }
+                    });
+                } catch (error) {
+                    console.error("Error checking promotion eligibility:", error);
+                    promotionText.textContent = 'เกิดข้อผิดพลาดในการตรวจสอบคุณสมบัติ';
+                }
+            }
+            
+            async loadStudentAttendanceHistory() {
+                 const container = document.getElementById('attendance-history-container');
+                 container.innerHTML = '<p class="text-white-50">กำลังโหลดประวัติ...</p>';
+
+                 const enrollmentsQuery = query(collection(this.db, "enrollments"), where("studentId", "==", this.currentUserData.uid));
+                 const enrollmentsSnapshot = await getDocs(enrollmentsQuery);
+                 if (enrollmentsSnapshot.empty) {
+                     container.innerHTML = '<p class="text-white-50">ยังไม่มีประวัติการเข้าเรียน</p>';
+                     return;
+                 }
+                 
+                 const classIds = [...new Set(enrollmentsSnapshot.docs.map(d => d.data().classId))];
+                 if (classIds.length === 0) {
+                     container.innerHTML = '<p class="text-white-50">ยังไม่มีประวัติการเข้าเรียน</p>';
+                     return;
+                 }
+                 const classesQuery = query(collection(this.db, "classes"), where("__name__", "in", classIds));
+                 const classesSnapshot = await getDocs(classesQuery);
+                 const classMap = new Map(classesSnapshot.docs.map(d => [d.id, d.data()]));
+
+                 container.innerHTML = '';
+                 enrollmentsSnapshot.forEach(enrollDoc => {
+                     const enrollment = enrollDoc.data();
+                     const classInfo = classMap.get(enrollment.classId);
+                     if(classInfo) {
+                         let statusBadge;
+                         if (enrollment.status === 'leave_approved' || enrollment.status === 'homework_received') {
+                            let homeworkText = ' (ยังไม่ได้ส่งการบ้าน)';
+                            if (enrollment.status === 'homework_received') {
+                                homeworkText = ' (รับการบ้านแล้ว)';
+                            }
+                            if(enrollment.homeworkSubmitted) {
+                                homeworkText = ' (ให้คะแนนแล้ว)';
+                            }
+                            statusBadge = `<span class="badge bg-primary">ลาเรียน${homeworkText}</span>`;
+                         } else if (enrollment.attended) {
+                            statusBadge = '<span class="badge bg-success">เข้าเรียน</span>';
+                         } else {
+                             statusBadge = '<span class="badge bg-danger">ขาดเรียน</span>';
+                         }
+                         container.innerHTML += `
+                             <div class="d-flex justify-content-between align-items-center p-2 rounded" style="background-color:rgba(0,0,0,0.2);">
+                                 <div>
+                                     <p class="mb-0 fw-bold">${this.escapeHtml(classInfo.name)}</p>
+                                     <p class="mb-0 small text-white-50">${classInfo.classTime.toDate().toLocaleDateString('th-TH')}</p>
+                                 </div>
+                                 ${statusBadge}
+                             </div>
+                         `;
+                     }
+                 });
+            }
+
+            async loadStudentRegisterClass() {
+                const listContainer = document.getElementById('available-classes-list');
+                const yearDisplay = document.getElementById('student-year-display');
+                yearDisplay.textContent = this.currentUserData.year;
+                
+                const qClasses = query(collection(this.db, "classes"), where("year", "==", this.currentUserData.year));
+                const qEnrollments = query(collection(this.db, "enrollments"), where("studentId", "==", this.currentUserData.uid));
+
+                const unsubClasses = onSnapshot(qClasses, () => this.renderAvailableClasses(qClasses, qEnrollments, listContainer));
+                const unsubEnrollments = onSnapshot(qEnrollments, () => this.renderAvailableClasses(qClasses, qEnrollments, listContainer));
+
+                this.unsubscribeListeners.push(unsubClasses, unsubEnrollments);
+                this.renderAvailableClasses(qClasses, qEnrollments, listContainer); 
+            }
+            
+            async loadStudentRegisterExam() {
+                const listContainer = document.getElementById('available-exams-list');
+                const yearDisplay = document.getElementById('student-exam-year-display');
+                yearDisplay.textContent = this.currentUserData.year;
+                
+                const qExams = query(collection(this.db, "exams"), where("year", "==", this.currentUserData.year));
+                const qEnrollments = query(collection(this.db, "examEnrollments"), where("studentId", "==", this.currentUserData.uid));
+                
+                const unsubExams = onSnapshot(qExams, () => this.renderAvailableExams(qExams, qEnrollments, listContainer));
+                const unsubEnrollments = onSnapshot(qEnrollments, () => this.renderAvailableExams(qExams, qEnrollments, listContainer));
+
+                this.unsubscribeListeners.push(unsubExams, unsubEnrollments);
+                this.renderAvailableExams(qExams, qEnrollments, listContainer);
+            }
+
+            loadStudentTradeScoresPage() {
+                const uid = this.currentUserData.uid;
+                document.getElementById('my-uid').value = uid;
+
+                document.getElementById('copy-uid-btn').onclick = () => {
+                    const uidInput = document.getElementById('my-uid');
+                    uidInput.select();
+                    uidInput.setSelectionRange(0, 99999); 
+                    try {
+                         document.execCommand('copy');
+                         this.showModal('สำเร็จ', 'คัดลอก UID เรียบร้อยแล้ว');
+                    } catch(err) {
+                        this.showModal('เกิดข้อผิดพลาด', 'ไม่สามารถคัดลอกได้');
+                    }
+                };
+                
+                const subjectSelect = document.getElementById('trade-subject');
+                subjectSelect.innerHTML = '<option value="" disabled selected>เลือกวิชา</option>';
+                Object.keys(this.constants.SUBJECTS).forEach(subject => {
+                    subjectSelect.innerHTML += `<option value="${subject}">${subject}</option>`;
+                });
+
+                document.getElementById('initiate-trade-form').addEventListener('submit', (e) => this.handleInitiateTrade(e));
+
+                this.listenForTrades();
+            }
+            
+            // --- 6. HANDLERS & ACTIONS ---
+            
+            async handleCreateProfessor(event) {
+                event.preventDefault();
+                const form = event.target;
+                const name = form.querySelector('#prof-name').value;
+                const subject = form.querySelector('#prof-subject').value;
+                const email = form.querySelector('#prof-email').value;
+                const password = form.querySelector('#prof-password').value;
+
+                let secondaryAuth;
+                try {
+                    const secondaryAppName = 'professorCreation';
+                    const existingApp = getApps().find(app => app.name === secondaryAppName);
+                    const secondaryApp = existingApp || initializeApp(firebaseConfig, secondaryAppName);
+                    secondaryAuth = getAuth(secondaryApp);
+                    
+                    const userCredential = await createUserWithEmailAndPassword(secondaryAuth, email, password);
+                    
+                    await setDoc(this.userDocRef(userCredential.user.uid), {
+                        name: name,
+                        email: email,
+                        subject: subject,
+                        role: 'professor',
+                        status: 'active',
+                        isInternshipSupervisor: false, // Default value
+                        createdAt: serverTimestamp()
+                    });
+
+                    await signOut(secondaryAuth);
+                    this.showModal('สำเร็จ', `สร้างบัญชีสำหรับศาสตราจารย์ ${this.escapeHtml(name)} เรียบร้อย`);
+                    form.reset();
+
+                } catch (error) {
+                    this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถสร้างบัญชีได้: ${this.escapeHtml(error.message)}`);
+                }
+            }
+            
+            async handleCreateClass(event) {
+                event.preventDefault();
+                const form = event.target;
+                const classData = {
+                    name: form.querySelector('#class-name').value,
+                    year: parseInt(form.querySelector('#class-year').value),
+                    regStart: new Date(form.querySelector('#reg-start').value),
+                    regEnd: new Date(form.querySelector('#reg-end').value),
+                    classTime: new Date(form.querySelector('#class-time').value),
+                    status: 'active',
+                    professorId: this.currentUserData.uid,
+                    professorName: this.currentUserData.name,
+                    subject: this.currentUserData.subject,
+                    createdAt: serverTimestamp()
+                };
+                
+                await addDoc(collection(this.db, "classes"), classData);
+                this.showModal('สำเร็จ', `สร้างคลาสเรียน "${this.escapeHtml(classData.name)}" เรียบร้อย`);
+                form.reset();
+            }
+
+            async handleCreateExam(event) {
+                event.preventDefault();
+                const form = event.target;
+                const examData = {
+                    name: form.querySelector('#exam-name').value,
+                    year: parseInt(form.querySelector('#exam-year').value),
+                    regStart: new Date(form.querySelector('#exam-reg-start').value),
+                    regEnd: new Date(form.querySelector('#exam-reg-end').value),
+                    examTime: new Date(form.querySelector('#exam-time').value),
+                    status: 'active',
+                    professorId: this.currentUserData.uid,
+                    professorName: this.currentUserData.name,
+                    subject: this.currentUserData.subject,
+                    createdAt: serverTimestamp()
+                };
+                
+                await addDoc(collection(this.db, "exams"), examData);
+                this.showModal('สำเร็จ', `สร้างคลาสสอบ "${this.escapeHtml(examData.name)}" เรียบร้อย`);
+                form.reset();
+            }
+
+            async handleAddIntern(event) {
+                event.preventDefault();
+                const form = event.target;
+                const studentUid = form.querySelector('#intern-uid').value.trim();
+                const { uid: professorId, name: professorName, subject } = this.currentUserData;
+
+                if (!studentUid) {
+                    this.showModal('ข้อมูลไม่ครบถ้วน', 'กรุณากรอก Student UID');
+                    return;
+                }
+
+                try {
+                    const studentRef = this.userDocRef(studentUid);
+                    const studentSnap = await getDoc(studentRef);
+                    if (!studentSnap.exists() || studentSnap.data().role !== 'student') {
+                        this.showModal('เกิดข้อผิดพลาด', 'ไม่พบนักศึกษาจาก UID ที่ระบุ หรือผู้ใช้ไม่ใช่สถานะนักศึกษา');
+                        return;
+                    }
+
+                    const existingInternshipSnap = await getDoc(doc(this.db, "internships", studentUid));
+                    if (existingInternshipSnap.exists()) {
+                        this.showModal('เกิดข้อผิดพลาด', 'นักศึกษานี้เป็นนักศึกษาฝึกงานอยู่แล้ว');
+                        return;
+                    }
+
+                    await setDoc(doc(this.db, "internships", studentUid), {
+                        studentId: studentUid,
+                        professorId,
+                        professorName,
+                        subject,
+                        addedAt: serverTimestamp()
+                    });
+
+                    this.showModal('สำเร็จ', `เพิ่ม ${studentSnap.data().name} เป็นนักศึกษาฝึกงานเรียบร้อยแล้ว`);
+                    form.reset();
+
+                } catch (error) {
+                    console.error("Error adding intern:", error);
+                    this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถเพิ่มนักศึกษาฝึกงานได้: ${this.escapeHtml(error.message)}`);
+                }
+            }
+            
+            handleRemoveIntern(studentId, studentName) {
+                const actions = [
+                    { text: 'ยกเลิก', class: 'btn-secondary', handler: () => this.closeModal() },
+                    { text: 'ยืนยัน', class: 'btn-danger', handler: async () => {
+                        try {
+                            await deleteDoc(doc(this.db, "internships", studentId));
+                            this.closeModal();
+                            this.showModal('สำเร็จ', `ลบ ${this.escapeHtml(studentName)} ออกจากการเป็นนักศึกษาฝึกงานแล้ว`);
+                        } catch (error) {
+                            console.error("Error removing intern:", error);
+                            this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถลบได้: ${this.escapeHtml(error.message)}`);
+                        }
+                    }}
+                ];
+                this.showModal('ยืนยันการลบ', `คุณแน่ใจหรือไม่ว่าต้องการลบ ${this.escapeHtml(studentName)} ออกจากการเป็นนักศึกษาฝึกงาน?`, actions);
+            }
+
+            async handleRequestPromotion() {
+                await addDoc(collection(this.db, "promotionRequests"), {
+                    studentId: this.currentUserData.uid,
+                    studentName: this.currentUserData.name,
+                    currentYear: this.currentUserData.year,
+                    status: 'pending',
+                    requestedAt: serverTimestamp()
+                });
+                this.showModal('ส่งคำขอสำเร็จ', 'คำขอเลื่อนชั้นปีของคุณถูกส่งไปแล้ว');
+                this.loadPageContent('student-dashboard'); 
+            }
+
+            async handleFinishClass(classId, className) {
+                const actions = [
+                    { text: 'ยกเลิก', class: 'btn-secondary', handler: () => this.closeModal() },
+                    { text: 'ยืนยันจบคลาส', class: 'btn-danger', handler: async () => {
+                        const classRef = doc(this.db, "classes", classId);
+                        await updateDoc(classRef, { status: 'finished' });
+                        this.showModal('สำเร็จ', `คลาส "${this.escapeHtml(className)}" ได้จบลงแล้ว`);
+                    } }
+                ];
+                this.showModal('ยืนยันการจบคลาส', `คุณแน่ใจหรือไม่ว่าต้องการจบคลาส "${this.escapeHtml(className)}"? การกระทำนี้ไม่สามารถย้อนกลับได้`, actions);
+            }
+             
+            async handleFinishExam(examId, examName) {
+                const actions = [
+                    { text: 'ยกเลิก', class: 'btn-secondary', handler: () => this.closeModal() },
+                    { text: 'ยืนยันจบการสอบ', class: 'btn-danger', handler: async () => {
+                        const examRef = doc(this.db, "exams", examId);
+                        await updateDoc(examRef, { status: 'finished' });
+                        this.showModal('สำเร็จ', `การสอบ "${this.escapeHtml(examName)}" ได้จบลงแล้ว`);
+                    } }
+                ];
+                this.showModal('ยืนยันการจบการสอบ', `คุณแน่ใจหรือไม่ว่าต้องการจบการสอบ "${this.escapeHtml(examName)}"?`, actions);
+            }
+            
+            async handlePromotion(requestId, studentId, newYear) {
+                const userRef = this.userDocRef(studentId);
+                const resetScores = {};
+                for (const subject in this.constants.SUBJECTS) {
+                    resetScores[subject] = 0;
+                }
+                
+                await updateDoc(userRef, {
+                    year: newYear,
+                    scores: resetScores
+                });
+                await this.updatePromotionStatus(requestId, 'approved', 'อนุมัติการเลื่อนชั้นปีเรียบร้อย');
+            }
+            
+            async updateUserStatus(uid, status, message) {
+                await updateDoc(this.userDocRef(uid), { status });
+                this.showModal('สำเร็จ', message);
+            }
+            
+            async handleRejectAndRemoveUser(uid, studentName) {
+                 const actions = [
+                    { text: 'ยกเลิก', class: 'btn-secondary', handler: () => this.closeModal() },
+                    { text: 'ยืนยันการปฏิเสธ', class: 'btn-danger', handler: async () => {
+                        try {
+                            // Note: This only deletes the Firestore document.
+                            // The user will still exist in Firebase Authentication.
+                            // A more complete solution would use a Cloud Function to delete the auth user as well.
+                            await deleteDoc(this.userDocRef(uid));
+                            this.closeModal();
+                            this.showModal('สำเร็จ', `ปฏิเสธและลบคำขอของ ${this.escapeHtml(studentName)} เรียบร้อยแล้ว`);
+                        } catch (error) {
+                             this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถลบคำขอได้: ${this.escapeHtml(error.message)}`);
+                        }
+                    }}
+                ];
+                this.showModal('ยืนยันการปฏิเสธ', `คุณแน่ใจหรือไม่ว่าต้องการปฏิเสธคำขอของ ${this.escapeHtml(studentName)}? การดำเนินการนี้จะลบข้อมูลออกจากระบบอย่างถาวร`, actions);
+            }
+
+            async updatePromotionStatus(requestId, status, message) {
+                 await updateDoc(doc(this.db, "promotionRequests", requestId), { 
+                     status: status, 
+                     processedAt: serverTimestamp()
+                 });
+                this.showModal('สำเร็จ', message);
+            }
+
+            async handleRequestLeave(enrollmentId, className) {
+                const actions = [
+                    { text: 'ยกเลิก', class: 'btn-secondary', handler: () => this.closeModal() },
+                    { text: 'ยืนยันการลา', class: 'btn-info', handler: async () => {
+                        const enrollmentRef = doc(this.db, "enrollments", enrollmentId);
+                        await updateDoc(enrollmentRef, { status: 'leave_requested' });
+                        this.showModal('ส่งคำร้องสำเร็จ', `ส่งคำร้องขอลาเรียนคลาส "${this.escapeHtml(className)}" เรียบร้อยแล้ว`);
+                    } }
+                ];
+                this.showModal('ยืนยันการลา', `คุณต้องการส่งคำร้องขอลาเรียนคลาส "${this.escapeHtml(className)}" ใช่หรือไม่?`, actions);
+            }
+
+            async handleMarkAttendance(enrollmentId, studentId, subject) {
+                try {
+                    const enrollmentRef = doc(this.db, "enrollments", enrollmentId);
+                    // UPDATED: Add user and timestamp info
+                    await updateDoc(enrollmentRef, { 
+                        attended: true,
+                        attendedBy: this.currentUserData.name,
+                        attendedAt: serverTimestamp()
+                    });
+
+                    const studentRef = this.userDocRef(studentId);
+                    const studentDoc = await getDoc(studentRef);
+                    if (studentDoc.exists()) {
+                        const currentScores = studentDoc.data().scores || {};
+                        const newScore = (currentScores[subject] || 0) + 2;
+                        await updateDoc(studentRef, { [`scores.${subject}`]: newScore });
+                    }
+                } catch (error) {
+                    console.error("Error marking attendance:", error);
+                    this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถบันทึกการเช็คชื่อได้: ${this.escapeHtml(error.message)}`);
+                }
+            }
+
+            async handleConfirmHomeworkSubmission(enrollmentId, studentId, subject) {
+                try {
+                    const enrollmentRef = doc(this.db, "enrollments", enrollmentId);
+                    const updateData = { 
+                        homeworkSubmitted: true,
+                        homeworkSubmittedBy: this.currentUserData.name,
+                        homeworkSubmittedAt: serverTimestamp()
+                    };
+
+                    await updateDoc(enrollmentRef, updateData);
+
+                    // Only professors can award points directly.
+                    if (this.currentUserData.role === 'professor') {
+                        const studentRef = this.userDocRef(studentId);
+                        const studentDoc = await getDoc(studentRef);
+
+                        if (studentDoc.exists()) {
+                            const currentScores = studentDoc.data().scores || {};
+                            const newScore = (currentScores[subject] || 0) + 1;
+                            await updateDoc(studentRef, { [`scores.${subject}`]: newScore });
+                        }
+                    }
+                    
+                    this.showModal('สำเร็จ', 'ยืนยันการบ้านเรียบร้อยแล้ว');
+
+                } catch (error) {
+                    console.error("Error confirming homework:", error);
+                    this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถยืนยันการบ้านได้: ${this.escapeHtml(error.message)}`);
+                }
+            }
+
+            async handleInitiateTrade(event) {
+                event.preventDefault();
+                const form = event.target;
+                const recipientId = form.querySelector('#recipient-uid').value.trim();
+                const subject = form.querySelector('#trade-subject').value;
+                const amount = parseInt(form.querySelector('#trade-amount').value);
+                const senderId = this.currentUserData.uid;
+
+                if (recipientId === senderId) {
+                    this.showModal('เกิดข้อผิดพลาด', 'คุณไม่สามารถเทรดคะแนนให้ตัวเองได้');
+                    return;
+                }
+                if (!subject || isNaN(amount) || amount < 1 || amount > 4) {
+                    this.showModal('เกิดข้อผิดพลาด', 'ข้อมูลการเทรดไม่ถูกต้อง');
+                    return;
+                }
+
+                const studentRef = this.userDocRef(senderId);
+                const studentDoc = await getDoc(studentRef);
+                const currentScores = studentDoc.data().scores || {};
+                const currentSubjectScore = currentScores[subject] || 0;
+
+                if (currentSubjectScore < amount) {
+                    this.showModal('คะแนนไม่พอ', `คุณมีคะแนนวิชา ${subject} ไม่เพียงพอสำหรับการเทรด`);
+                    return;
+                }
+
+                try {
+                    const recipientDoc = await getDoc(this.userDocRef(recipientId));
+                    if (!recipientDoc.exists()) {
+                        this.showModal('เกิดข้อผิดพลาด', 'ไม่พบผู้ใช้ปลายทาง');
+                        return;
+                    }
+
+                    const newSenderScore = currentSubjectScore - amount;
+                    await updateDoc(studentRef, { [`scores.${subject}`]: newSenderScore });
+
+                    await addDoc(collection(this.db, "trades"), {
+                        senderId: senderId,
+                        senderName: this.currentUserData.name,
+                        recipientId: recipientId,
+                        recipientName: recipientDoc.data().name,
+                        subject: subject,
+                        amount: amount,
+                        status: 'pending',
+                        createdAt: serverTimestamp(),
+                        expiresAt: new Date(Date.now() + 30 * 60 * 1000) // 30 minutes
+                    });
+
+                    this.showModal('สำเร็จ', 'ส่งคำขอเทรดคะแนนเรียบร้อยแล้ว');
+                    form.reset();
+
+                } catch (error) {
+                    await updateDoc(studentRef, { [`scores.${subject}`]: currentSubjectScore });
+                    console.error("Error initiating trade:", error);
+                    this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถส่งคำขอเทรดได้: ${this.escapeHtml(error.message)}`);
+                }
+            }
+
+            async handleAcceptTrade(trade) {
+                const recipientRef = this.userDocRef(trade.recipientId);
+                const recipientDoc = await getDoc(recipientRef);
+                if (recipientDoc.exists()) {
+                    try {
+                        const currentScores = recipientDoc.data().scores || {};
+                        const newScore = (currentScores[trade.subject] || 0) + trade.amount;
+                        await updateDoc(recipientRef, { [`scores.${trade.subject}`]: newScore });
+                        await updateDoc(doc(this.db, "trades", trade.id), { status: 'completed' });
+                        this.showModal('สำเร็จ', 'ยอมรับการเทรดเรียบร้อยแล้ว');
+                    } catch (error) {
+                         console.error("Error accepting trade:", error);
+                         this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถยอมรับการเทรดได้: ${this.escapeHtml(error.message)}`);
+                    }
+                }
+            }
+
+            async handleRejectOrCancelTrade(trade) {
+                const senderRef = this.userDocRef(trade.senderId);
+                const senderDoc = await getDoc(senderRef);
+                if (senderDoc.exists()) {
+                    try {
+                        const currentScores = senderDoc.data().scores || {};
+                        const newScore = (currentScores[trade.subject] || 0) + trade.amount;
+                        await updateDoc(senderRef, { [`scores.${trade.subject}`]: newScore }); // FIXED: Used trade.subject
+                        await updateDoc(doc(this.db, "trades", trade.id), { status: 'rejected' });
+                        this.showModal('สำเร็จ', 'ดำเนินการยกเลิก/ปฏิเสธการเทรด และคืนคะแนนเรียบร้อยแล้ว');
+                    } catch (error) {
+                        console.error("Error rejecting/cancelling trade:", error);
+                        this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถดำเนินการได้: ${this.escapeHtml(error.message)}`);
+                    }
+                }
+            }
+
+
+            // --- 7. DATA FETCHING & RENDERING HELPERS ---
+            
+            loadAllUsersList() {
+                 const container = document.getElementById('all-users-container');
+                 const unsubscribe = onSnapshot(this.usersCollectionRef(), (snapshot) => {
+                     container.innerHTML = '';
+                     const users = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                     this.renderUserList('Admins', users.filter(u => u.role === 'admin'), container);
+                     this.renderUserList('Professors', users.filter(u => u.role === 'professor'), container);
+                     this.renderUserList('Students', users.filter(u => u.role === 'student'), container);
+                 });
+                 this.unsubscribeListeners.push(unsubscribe);
+            }
+
+            renderUserList(title, userArray, container) {
+                const listWrapper = document.createElement('div');
+                listWrapper.className = 'mb-4';
+                
+                const titleElement = document.createElement('h5');
+                titleElement.className = 'text-warning font-mystic mt-4';
+                titleElement.textContent = title;
+                listWrapper.appendChild(titleElement);
+                
+                if (userArray.length === 0) {
+                    listWrapper.innerHTML += '<p class="text-white-50 small">ไม่พบผู้ใช้ในหมวดนี้</p>';
+                    container.appendChild(listWrapper);
+                    return;
+                }
+                
+                const listGroup = document.createElement('div');
+                listGroup.className = 'vstack gap-2';
+                
+                userArray.forEach(user => {
+                    const item = document.createElement('div');
+                    item.className = 'd-flex align-items-center justify-content-between p-2 rounded';
+                    item.style.backgroundColor = 'rgba(0,0,0,0.2)';
+                    
+                    let buttonsHtml = '';
+                    if (user.role === 'student') {
+                        buttonsHtml = `<button class="btn btn-sm btn-outline-warning edit-student-btn" data-uid="${user.id}">แก้ไข</button>`;
+                    } else if (user.role === 'professor') {
+                        buttonsHtml = `<button class="btn btn-sm btn-outline-warning edit-professor-btn" data-uid="${user.id}">แก้ไข</button>`;
+                    }
+
+                    item.innerHTML = `
+                        <div>
+                            <p class="fw-bold mb-0 user-list-name">${this.escapeHtml(user.name)}</p>
+                            <p class="small user-list-email mb-0">${this.escapeHtml(user.email)}</p>
+                        </div>
+                        <div>${buttonsHtml}</div>
+                    `;
+                    
+                    if (user.role === 'student') {
+                        item.querySelector('.edit-student-btn').onclick = () => this.openEditStudentModal(user);
+                    } else if (user.role === 'professor') {
+                        item.querySelector('.edit-professor-btn').onclick = () => this.openEditProfessorModal(user);
+                    }
+                    
+                    listGroup.appendChild(item);
+                });
+                listWrapper.appendChild(listGroup);
+                container.appendChild(listWrapper);
+            }
+            
+            createRequestItem(title, subtitle, buttons = []) {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'd-flex align-items-center justify-content-between p-2 rounded';
+                itemDiv.style.backgroundColor = 'rgba(0,0,0,0.2)';
+
+                let buttonsHtml = buttons.map(btn => 
+                    `<button class="btn btn-sm ${btn.class}">${this.getIcon(btn.icon)}</button>`
+                ).join('');
+
+                itemDiv.innerHTML = `
+                    <div>
+                        <p class="fw-bold mb-0 user-list-name">${title}</p>
+                        <p class="small user-list-email mb-0">${subtitle}</p>
+                    </div>
+                    <div class="d-flex gap-2">${buttonsHtml}</div>
+                `;
+
+                itemDiv.querySelectorAll('button').forEach((btnEl, index) => {
+                    btnEl.onclick = buttons[index].handler;
+                });
+                return itemDiv;
+            }
+
+            async getStudentNames(studentIds) {
+                if (!studentIds || studentIds.length === 0) return {};
+                const nameMap = {};
+                for (let i = 0; i < studentIds.length; i += 30) {
+                    const batchIds = studentIds.slice(i, i + 30);
+                    const q = query(this.usersCollectionRef(), where("__name__", "in", batchIds));
+                    const snapshot = await getDocs(q);
+                    snapshot.forEach(doc => { nameMap[doc.id] = doc.data().name; });
+                }
+                return nameMap;
+            }
+
+            /**
+             * MODIFIED: Fetches student data individually to comply with security rules.
+             * Instead of a single query, it performs multiple 'get' requests.
+             * @param {Array<string>} studentIds - An array of student UIDs.
+             * @returns {Promise<Map>} A map where keys are student UIDs and values are student data objects.
+             */
+            async getStudentData(studentIds) {
+                if (!studentIds || studentIds.length === 0) return new Map();
+                const dataMap = new Map();
+
+                // Create an array of promises, each one fetching a single student document.
+                const promises = studentIds.map(id => getDoc(this.userDocRef(id)));
+
+                // Wait for all the individual fetches to complete.
+                const studentDocSnapshots = await Promise.all(promises);
+
+                studentDocSnapshots.forEach(docSnap => {
+                    if (docSnap.exists()) {
+                        dataMap.set(docSnap.id, { id: docSnap.id, ...docSnap.data() });
+                    }
+                });
+
+                return dataMap;
+            }
+
+            async getClassData(classIds) {
+                if (!classIds || classIds.length === 0) return new Map();
+                const dataMap = new Map();
+                for (let i = 0; i < classIds.length; i += 30) {
+                    const batchIds = classIds.slice(i, i + 30);
+                    const q = query(collection(this.db, "classes"), where("__name__", "in", batchIds));
+                    const snapshot = await getDocs(q);
+                    snapshot.forEach(doc => { dataMap.set(doc.id, {id: doc.id, ...doc.data()}); });
+                }
+                return dataMap;
+            }
+            
+            async loadLeaveRequestsForProfessor() {
+                const container = document.getElementById('professor-leave-requests-list');
+                if (!container) return;
+
+                const classesQuery = query(collection(this.db, "classes"), where("professorId", "==", this.currentUserData.uid));
+                const classesSnapshot = await getDocs(classesQuery);
+                const classIds = classesSnapshot.docs.map(doc => doc.id);
+                const classMap = new Map(classesSnapshot.docs.map(doc => [doc.id, doc.data()]));
+                
+                if (classIds.length === 0) {
+                    container.innerHTML = '<p class="text-white-50 small">ไม่มีคลาสเรียน</p>';
+                    return;
+                }
+
+                const enrollmentsQuery = query(collection(this.db, "enrollments"), where("classId", "in", classIds), where("status", "==", "leave_requested"));
+                
+                const unsubscribe = onSnapshot(enrollmentsQuery, async (enrollmentsSnapshot) => {
+                    container.innerHTML = '';
+                    if (enrollmentsSnapshot.empty) {
+                        container.innerHTML = '<p class="text-white-50 small">ไม่มีคำร้องขอในขณะนี้</p>';
+                        return;
+                    }
+                    
+                    const studentIds = [...new Set(enrollmentsSnapshot.docs.map(d => d.data().studentId))];
+                    const studentNameMap = await this.getStudentNames(studentIds);
+
+                    enrollmentsSnapshot.forEach(enrollDoc => {
+                        const enrollment = {id: enrollDoc.id, ...enrollDoc.data()};
+                        const studentName = studentNameMap[enrollment.studentId] || 'ไม่พบชื่อ';
+                        const className = classMap.get(enrollment.classId)?.name || 'ไม่พบคลาส';
+
+                        const item = document.createElement('div');
+                        item.className = 'p-2 rounded';
+                        item.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                        item.innerHTML = `
+                            <p class="mb-1 fw-bold">${this.escapeHtml(studentName)}</p>
+                            <p class="mb-2 small text-white-50">ขอลาเรียน: ${this.escapeHtml(className)}</p>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-outline-success w-100 approve-leave-btn">อนุมัติ</button>
+                                <button class="btn btn-sm btn-outline-danger w-100 reject-leave-btn">ไม่อนุมัติ</button>
+                            </div>
+                        `;
+                        item.querySelector('.approve-leave-btn').onclick = async () => {
+                             await updateDoc(doc(this.db, "enrollments", enrollment.id), { status: 'leave_approved' });
+                             this.showModal('สำเร็จ', 'อนุมัติการลาเรียบร้อยแล้ว');
+                        };
+                         item.querySelector('.reject-leave-btn').onclick = async () => {
+                             await updateDoc(doc(this.db, "enrollments", enrollment.id), { status: 'registered' });
+                             this.showModal('สำเร็จ', 'ปฏิเสธการลาเรียบร้อยแล้ว');
+                        };
+                        container.appendChild(item);
+                    });
+                });
+                this.unsubscribeListeners.push(unsubscribe);
+            }
+
+            renderClassList(classList, container, isActive) {
+                container.innerHTML = '';
+                if (classList.length === 0) {
+                    container.innerHTML = `<p class="text-white-50 small">${isActive ? 'ไม่มีคลาสเรียนที่กำลังสอน' : 'ไม่มีคลาสเรียนที่จบไปแล้ว'}</p>`;
+                    return;
+                }
+                classList.forEach(classData => {
+                    const item = document.createElement('div');
+                    item.className = 'd-flex align-items-center justify-content-between p-3 rounded';
+                    item.style.backgroundColor = 'rgba(0,0,0,0.2)';
+                    
+                    const classTime = classData.classTime?.toDate().toLocaleString('th-TH') || 'N/A';
+                    
+                    const buttonsHtml = isActive 
+                        ? `<button class="btn btn-sm btn-outline-danger finish-class-btn">จบคลาส</button>
+                           <button class="btn btn-sm btn-outline-info view-students-btn">ดูรายชื่อ</button>`
+                        : `<button class="btn btn-sm btn-outline-secondary view-students-btn">ดูรายชื่อ</button>`;
+
+                    item.innerHTML = `
+                        <div>
+                            <p class="fw-bold mb-0 list-item-title">${this.escapeHtml(classData.name)}</p>
+                            <p class="small list-item-subtitle mb-0">เวลาที่สอน: ${classTime}</p>
+                        </div>
+                        <div class="d-flex gap-2">${buttonsHtml}</div>
+                    `;
+
+                    item.querySelector('.view-students-btn').onclick = () => {
+                        this.showStudentListModal('class', classData.id, `คลาส: ${classData.name}`);
+                    };
+
+                    if (isActive) {
+                        item.querySelector('.finish-class-btn').onclick = () => {
+                            this.handleFinishClass(classData.id, classData.name);
+                        };
+                    }
+                    container.appendChild(item);
+                });
+            }
+
+            renderExamList(examList, container, isActive) {
+                container.innerHTML = '';
+                if (examList.length === 0) {
+                    container.innerHTML = `<p class="text-white-50 small">${isActive ? 'ไม่มีคลาสสอบที่กำลังดำเนินอยู่' : 'ไม่มีคลาสสอบที่จบไปแล้ว'}</p>`;
+                    return;
+                }
+                examList.forEach(examData => {
+                    const item = document.createElement('div');
+                    item.className = 'd-flex align-items-center justify-content-between p-3 rounded';
+                    item.style.backgroundColor = 'rgba(0,0,0,0.2)';
+                    
+                    const examTime = examData.examTime?.toDate().toLocaleString('th-TH') || 'N/A';
+                    
+                    const buttonsHtml = isActive 
+                        ? `<button class="btn btn-sm btn-outline-danger finish-exam-btn">จบการสอบ</button>
+                           <button class="btn btn-sm btn-outline-info view-students-btn">ดูรายชื่อ</button>`
+                        : `<button class="btn btn-sm btn-outline-secondary view-students-btn">ดูรายชื่อ</button>`;
+
+                    item.innerHTML = `
+                        <div>
+                            <p class="fw-bold mb-0 list-item-title">${this.escapeHtml(examData.name)} (ปี ${examData.year})</p>
+                            <p class="small list-item-subtitle mb-0">เวลาสอบ: ${examTime}</p>
+                        </div>
+                        <div class="d-flex gap-2">${buttonsHtml}</div>
+                    `;
+
+                    item.querySelector('.view-students-btn').onclick = () => {
+                        this.showStudentListModal('exam', examData.id, `คลาสสอบ: ${examData.name}`);
+                    };
+
+                    if (isActive) {
+                        item.querySelector('.finish-exam-btn').onclick = () => {
+                            this.handleFinishExam(examData.id, examData.name);
+                        };
+                    }
+                    container.appendChild(item);
+                });
+            }
+
+            renderStudentSubList(studentList, container, type, isFinished, subject) {
+                container.innerHTML = '';
+                if (studentList.length === 0) {
+                    container.innerHTML = '<p class="text-white-50 small fst-italic">-- ไม่มี --</p>';
+                    return;
+                }
+
+                studentList.forEach(({ enrollment, student }) => {
+                    const item = document.createElement('div');
+                    item.className = 'd-flex justify-content-between align-items-center p-2 rounded';
+                    item.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                    
+                    let statusHtml = '';
+                    if(type === 'class') {
+                        // Logic for class attendance status
+                         if (enrollment.status === 'registered') {
+                             if (enrollment.attended) {
+                                const attendedInfo = enrollment.attendedBy 
+                                    ? `<span class="status-meta">โดย: ${this.escapeHtml(enrollment.attendedBy)} @ ${enrollment.attendedAt.toDate().toLocaleString('th-TH')}</span>` 
+                                    : '';
+                                statusHtml = `<div class="text-center"><span class="badge bg-success">เข้าเรียนแล้ว</span>${attendedInfo}</div>`;
+                            } else {
+                                statusHtml = !isFinished 
+                                    ? `<button class="btn btn-sm btn-outline-warning attendance-btn">เช็คชื่อ</button>` 
+                                    : `<span class="badge bg-secondary">ขาดเรียน</span>`;
+                            }
+                        } else if (enrollment.status === 'leave_approved' || enrollment.status === 'homework_received') {
+                             if (enrollment.homeworkSubmitted) {
+                                const gradedInfo = enrollment.homeworkGradedBy
+                                    ? `<span class="status-meta">ให้คะแนนโดย: ${this.escapeHtml(enrollment.homeworkGradedBy)} @ ${enrollment.homeworkGradedAt.toDate().toLocaleString('th-TH')}</span>`
+                                    : '';
+                                statusHtml = `<div class="text-center"><span class="badge bg-primary">ส่งการบ้านแล้ว</span>${gradedInfo}</div>`;
+                            } else { 
+                                if (enrollment.status === 'homework_received') {
+                                    const receivedInfo = enrollment.homeworkReceivedBy
+                                        ? `<span class="status-meta">รับเรื่องโดย: ${this.escapeHtml(enrollment.homeworkReceivedBy)} @ ${enrollment.homeworkReceivedAt.toDate().toLocaleString('th-TH')}</span>`
+                                        : '';
+                                    statusHtml = `<div class="text-center"><span class="badge bg-info">รับการบ้านแล้ว</span>${receivedInfo}</div>`;
+                                    if (!isFinished && this.currentUserData.role === 'professor') {
+                                        statusHtml += `<button class="btn btn-sm btn-outline-success homework-grade-btn mt-2">ให้คะแนน (+1)</button>`;
+                                    }
+                                } else { // status is 'leave_approved'
+                                     statusHtml = !isFinished && (this.currentUserData.role === 'professor' || this.currentUserData.internship) 
+                                        ? `<button class="btn btn-sm btn-outline-success homework-grade-btn">ยืนยันการบ้าน</button>`
+                                        : `<span class="badge bg-secondary">ยังไม่ส่งการบ้าน</span>`;
+                                }
+                            }
+                        }
+                    } else { // type === 'exam'
+                        const isGraded = enrollment.status === 'completed';
+                        if (isGraded) {
+                            const badgeClass = enrollment.passed ? 'bg-success' : 'bg-danger';
+                            statusHtml = `<span class="me-2 badge ${badgeClass}">${enrollment.passed ? 'ผ่าน' : 'ไม่ผ่าน'} (เกรด: ${enrollment.grade})</span>`;
+                        }
+                        if (!isFinished) {
+                          statusHtml += `<button class="btn btn-sm btn-outline-warning grade-exam-btn">${isGraded ? 'แก้ไขผลสอบ' : 'บันทึกผลสอบ'}</button>`;
+                        }
+                    }
+                    
+                    item.innerHTML = `
+                        <div>
+                            <p class="fw-bold mb-0 user-list-name">${this.escapeHtml(student.name)}</p>
+                            <p class="small user-list-email mb-0">${this.escapeHtml(student.email)}</p>
+                        </div>
+                        <div class="d-flex flex-column align-items-end" style="min-width: 160px;">${statusHtml}</div>
+                    `;
+
+                    if (!isFinished) {
+                        if (type === 'class') {
+                            const attendanceBtn = item.querySelector('.attendance-btn');
+                            if (attendanceBtn) {
+                                attendanceBtn.onclick = () => this.handleMarkAttendance(enrollment.enrollmentId, enrollment.studentId, subject);
+                            }
+                             const gradeBtn = item.querySelector('.homework-grade-btn');
+                            if(gradeBtn) {
+                                if (this.currentUserData.role === 'professor') {
+                                    gradeBtn.onclick = () => this.handleProfessorGradesHomework(enrollment.enrollmentId, enrollment.studentId, subject);
+                                }
+                            }
+                        } else {
+                            const gradeBtn = item.querySelector('.grade-exam-btn');
+                            if(gradeBtn) {
+                                gradeBtn.onclick = () => this.openGradeExamModal(enrollment, student);
+                            }
+                        }
+                    }
+                    container.appendChild(item);
+                });
+            }
+
+            async showStudentListModal(type, id, title) {
+                const modal = document.getElementById('student-list-modal-container');
+                const titleEl = modal.querySelector('#student-list-modal-title');
+                const bodyEl = modal.querySelector('#student-list-modal-body');
+                const actionsEl = modal.querySelector('#student-list-modal-actions');
+                
+                actionsEl.innerHTML = ''; // Clear previous actions on open
+                titleEl.innerText = title;
+
+                const houseOptions = Object.keys(this.constants.HOUSES).map(house => `<option value="${house}">${house}</option>`).join('');
+                
+                if (type === 'class') {
+                    bodyEl.innerHTML = `
+                        <div class="d-flex justify-content-end mb-3">
+                            <div class="w-50">
+                                <label for="house-filter" class="form-label small">กรองตามบ้าน:</label>
+                                <select id="house-filter" class="form-select form-select-sm">
+                                    <option value="all">ทุกบ้าน</option>
+                                    ${houseOptions}
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <h5 class="font-mystic text-warning">นักเรียนที่ลงทะเบียน</h5>
+                            <div id="registered-students-list" class="vstack gap-2 mb-4"><p class="text-white-50">กำลังโหลด...</p></div>
+                            <h5 class="font-mystic text-warning">นักเรียนที่ลา</h5>
+                            <div id="leave-students-list" class="vstack gap-2"><p class="text-white-50">กำลังโหลด...</p></div>
+                        </div>
+                    `;
+                } else { // type === 'exam'
+                     bodyEl.innerHTML = `
+                        <div class="d-flex justify-content-end mb-3">
+                            <div class="w-50">
+                                <label for="house-filter" class="form-label small">กรองตามบ้าน:</label>
+                                <select id="house-filter" class="form-select form-select-sm">
+                                    <option value="all">ทุกบ้าน</option>
+                                    ${houseOptions}
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <h5 class="font-mystic text-warning">นักเรียนที่ลงทะเบียนสอบ</h5>
+                            <div id="registered-students-list" class="vstack gap-2"><p class="text-white-50">กำลังโหลด...</p></div>
+                        </div>
+                    `;
+                }
+                
+                modal.classList.remove('d-none');
+                modal.classList.add('d-flex');
+
+                const houseFilterEl = modal.querySelector('#house-filter');
+                const registeredContainer = modal.querySelector('#registered-students-list');
+                const leaveContainer = modal.querySelector('#leave-students-list');
+                
+                let allEnrolledStudents = []; 
+
+                const renderFilteredLists = (parentData) => {
+                    const selectedHouse = houseFilterEl.value;
+                    const filteredStudents = selectedHouse === 'all'
+                        ? allEnrolledStudents
+                        : allEnrolledStudents.filter(s => s.student.house === selectedHouse);
+                    
+                    const isFinished = parentData.status === 'finished';
+                    const subject = parentData.subject;
+
+                    if (type === 'class') {
+                        const registeredList = filteredStudents.filter(s => s.enrollment.status === 'registered');
+                        const onLeaveList = filteredStudents.filter(s => s.enrollment.status === 'leave_approved' || s.enrollment.status === 'homework_received');
+                        this.renderStudentSubList(registeredList, registeredContainer, type, isFinished, subject);
+                        if (leaveContainer) {
+                             this.renderStudentSubList(onLeaveList, leaveContainer, type, isFinished, subject);
+                        }
+                    } else { // type === 'exam'
+                        this.renderStudentSubList(filteredStudents, registeredContainer, type, isFinished, subject);
+                    }
+                };
+                
+                try {
+                    const collectionName = type === 'class' ? 'classes' : 'exams';
+                    const parentDoc = await getDoc(doc(this.db, collectionName, id));
+                    if (!parentDoc.exists()) throw new Error("ไม่พบข้อมูลคลาสหรือการสอบ");
+                    
+                    const parentData = parentDoc.data();
+                    const cleanFileName = title.replace(/[^a-zA-Z0-9\u0E00-\u0E7F\s]/g, '_').replace(/\s+/g, '-');
+                    houseFilterEl.onchange = () => renderFilteredLists(parentData);
+
+                    const enrollmentCollection = type === 'class' ? 'enrollments' : 'examEnrollments';
+                    const idField = type === 'class' ? 'classId' : 'examId';
+                    const q = query(collection(this.db, enrollmentCollection), where(idField, "==", id));
+                    
+                    const unsubscribe = onSnapshot(q, async (enrollmentsSnapshot) => {
+                        if (!document.getElementById('student-list-modal-container').classList.contains('d-flex')) {
+                            unsubscribe(); return;
+                        }
+
+                        if (enrollmentsSnapshot.empty) {
+                            allEnrolledStudents = [];
+                            registeredContainer.innerHTML = '<p class="text-white-50 small fst-italic">-- ไม่มี --</p>';
+                            if (leaveContainer) leaveContainer.innerHTML = '<p class="text-white-50 small fst-italic">-- ไม่มี --</p>';
+                        } else {
+                            const enrollmentsData = enrollmentsSnapshot.docs.map(d => ({enrollmentId: d.id, ...d.data()}));
+                            const studentIds = [...new Set(enrollmentsData.map(e => e.studentId))];
+                            const studentDataMap = await this.getStudentData(studentIds);
+                            allEnrolledStudents = enrollmentsData
+                                .map(enrollment => ({ enrollment, student: studentDataMap.get(enrollment.studentId) }))
+                                .filter(item => item.student);
+                        }
+
+                        // Add action buttons after data is loaded
+                        actionsEl.innerHTML = `
+                            <button id="export-excel-btn" class="btn btn-outline-success fw-bold d-flex align-items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.884 6.68a.5.5 0 1 0-.768.64L7.349 10l-2.233 2.68a.5.5 0 0 0 .768.64L8 10.781l2.116 2.54a.5.5 0 0 0 .768-.64L8.651 10l2.233-2.68a.5.5 0 0 0-.768-.64L8 9.219l-2.116-2.54z"/><path d="M14 14V4.5L9.5 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2zM9.5 3A1.5 1.5 0 0 0 8 4.5V5h2V3.5A1.5 1.5 0 0 0 9.5 3z"/></svg>
+                                Export Excel
+                            </button>
+                            <button class="btn btn-secondary fw-bold" onclick="window.closeStudentListModal()">ปิด</button>
+                        `;
+                        document.getElementById('export-excel-btn').onclick = () => {
+                            const selectedHouse = houseFilterEl.value;
+                            const filteredStudents = selectedHouse === 'all'
+                                ? allEnrolledStudents
+                                : allEnrolledStudents.filter(s => s.student.house === selectedHouse);
+                            this.exportRosterToExcel(filteredStudents, cleanFileName, type);
+                        };
+
+                        renderFilteredLists(parentData);
+                    });
+                    this.unsubscribeListeners.push(unsubscribe);
+
+                } catch (error) {
+                    console.error("Error showing student list modal:", error);
+                    bodyEl.innerHTML = `<p class="text-danger">เกิดข้อผิดพลาด: ${this.escapeHtml(error.message)}</p>`;
+                }
+            }
+            
+            async renderAvailableClasses(qClasses, qEnrollments, container) {
+                const [classesSnapshot, enrollmentsSnapshot] = await Promise.all([getDocs(qClasses), getDocs(qEnrollments)]);
+                const enrollmentMap = new Map(enrollmentsSnapshot.docs.map(doc => [doc.data().classId, {id: doc.id, ...doc.data()}]));
+
+                container.innerHTML = '';
+                const activeClasses = classesSnapshot.docs
+                    .map(doc => ({id: doc.id, ...doc.data()}))
+                    .filter(c => c.status !== 'finished');
+
+                if(activeClasses.length === 0) {
+                    container.innerHTML = '<p class="text-white-50">ไม่มีคลาสเรียนที่เปิดให้ลงทะเบียน</p>'; return;
+                }
+
+                activeClasses.forEach(classData => {
+                    const enrollment = enrollmentMap.get(classData.id);
+                    const now = new Date();
+                    const regStart = classData.regStart.toDate();
+                    const regEnd = classData.regEnd.toDate();
+                    const classTime = classData.classTime.toDate();
+                    
+                    const item = document.createElement('div');
+                    item.className = 'd-flex align-items-center justify-content-between p-3 rounded';
+                    item.style.backgroundColor = 'rgba(0,0,0,0.2)';
+                    
+                    let buttonHtml = '';
+                    if (enrollment) {
+                        switch(enrollment.status) {
+                            case 'registered':
+                                buttonHtml = `<button class="btn btn-sm btn-outline-info leave-btn">แจ้งลา</button> <button class="btn btn-sm btn-outline-danger cancel-btn">ยกเลิก</button>`;
+                                break;
+                            case 'leave_approved':
+                            case 'homework_received':
+                                 buttonHtml = `<span class="badge bg-primary">ลาเรียน</span> <button class="btn btn-sm btn-outline-secondary cancel-leave-btn">ยกเลิกลา</button>`;
+                                 break;
+                            default: 
+                                 buttonHtml = `<span class="badge bg-success">ลงทะเบียนแล้ว</span>`;
+                        }
+                    } else {
+                        const isRegistrationOpen = now >= regStart && now <= regEnd;
+                        if (isRegistrationOpen) {
+                             buttonHtml = `<button class="btn btn-sm btn-warning register-btn">ลงทะเบียน</button>
+                                          <button class="btn btn-sm btn-outline-info direct-leave-btn">แจ้งลา</button>`;
+                        } else {
+                            const statusText = now > regEnd ? 'ปิดลงทะเบียน' : 'ยังไม่เปิด';
+                            buttonHtml = `<span class="badge bg-secondary me-2">${statusText}</span>
+                                          <button class="btn btn-sm btn-outline-info direct-leave-btn">แจ้งลา</button>`;
+                        }
+                    }
+                    
+                    item.innerHTML = `
+                        <div>
+                            <p class="fw-bold mb-1 list-item-title">${this.escapeHtml(classData.name)}</p>
+                            <div class="small list-item-subtitle" style="line-height: 1.6;">
+                                <span class="text-white-50">สอนโดย:</span> ${this.escapeHtml(classData.professorName)}<br>
+                                <span class="text-white-50">เปิดลงทะเบียน:</span> ${regStart.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}<br>
+                                <span class="text-white-50">ปิดลงทะเบียน:</span> ${regEnd.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}<br>
+                                <span class="text-white-50">เวลาเรียน:</span> ${classTime.toLocaleString('th-TH', { dateStyle: 'short', timeStyle: 'short' })}
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2 align-items-center">${buttonHtml}</div>
+                    `;
+
+                    // Add event listeners
+                    const registerBtn = item.querySelector('.register-btn');
+                    if (registerBtn) registerBtn.onclick = async () => {
+                        await addDoc(collection(this.db, "enrollments"), {
+                            studentId: this.currentUserData.uid, 
+                            classId: classData.id, 
+                            professorId: classData.professorId, 
+                            status: 'registered', 
+                            attended: false,
+                            homeworkSubmitted: false, 
+                            registeredAt: serverTimestamp()
+                        });
+                        this.showModal('สำเร็จ', `ลงทะเบียนเรียนวิชา "${classData.name}" เรียบร้อยแล้ว`);
+                    };
+
+                    const cancelBtn = item.querySelector('.cancel-btn');
+                    if (cancelBtn) cancelBtn.onclick = async () => {
+                        await deleteDoc(doc(this.db, "enrollments", enrollment.id));
+                        this.showModal('สำเร็จ', 'ยกเลิกการลงทะเบียนเรียบร้อย');
+                    };
+
+                    const leaveBtn = item.querySelector('.leave-btn');
+                    if (leaveBtn) leaveBtn.onclick = async () => {
+                        await updateDoc(doc(this.db, "enrollments", enrollment.id), { status: 'leave_approved' });
+                        this.showModal('สำเร็จ', `แจ้งลาเรียนคลาส "${classData.name}" เรียบร้อยแล้ว`);
+                    };
+                    
+                    const cancelLeaveBtn = item.querySelector('.cancel-leave-btn');
+                    if(cancelLeaveBtn) cancelLeaveBtn.onclick = async () => {
+                        await updateDoc(doc(this.db, "enrollments", enrollment.id), { status: 'registered' });
+                        this.showModal('สำเร็จ', `ยกเลิกการลาคลาส "${classData.name}" เรียบร้อยแล้ว`);
+                    };
+
+                    const directLeaveBtn = item.querySelector('.direct-leave-btn');
+                    if (directLeaveBtn) {
+                        directLeaveBtn.onclick = async () => {
+                            try {
+                                await addDoc(collection(this.db, "enrollments"), {
+                                    studentId: this.currentUserData.uid, 
+                                    classId: classData.id, 
+                                    professorId: classData.professorId, 
+                                    status: 'leave_approved',
+                                    attended: false, 
+                                    homeworkSubmitted: false, 
+                                    registeredAt: serverTimestamp()
+                                });
+                                this.showModal('สำเร็จ', `แจ้งลาเรียนคลาส "${this.escapeHtml(classData.name)}" เรียบร้อยแล้ว`);
+                            } catch (error) {
+                                console.error("Error with direct leave request:", error);
+                                this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถแจ้งลาได้: ${this.escapeHtml(error.message)}`);
+                            }
+                        };
+                    }
+
+                    container.appendChild(item);
+                });
+            }
+
+            async renderAvailableExams(qExams, qEnrollments, container) {
+                const [examsSnapshot, enrollmentsSnapshot] = await Promise.all([getDocs(qExams), getDocs(qEnrollments)]);
+                const enrollmentMap = new Map(enrollmentsSnapshot.docs.map(doc => [doc.data().examId, {id: doc.id, ...doc.data()}]));
+                
+                container.innerHTML = '';
+                if(examsSnapshot.empty) {
+                    container.innerHTML = '<p class="text-white-50">ไม่มีคลาสสอบที่เปิดให้ลงทะเบียน</p>'; return;
+                }
+                
+                examsSnapshot.forEach(examDoc => {
+                    const examData = {id: examDoc.id, ...examDoc.data()};
+                    const enrollment = enrollmentMap.get(examData.id);
+                    const now = new Date();
+                    const regStart = examData.regStart.toDate();
+                    const regEnd = examData.regEnd.toDate();
+                    
+                    const item = document.createElement('div');
+                    item.className = 'd-flex align-items-center justify-content-between p-3 rounded';
+                    item.style.backgroundColor = 'rgba(0,0,0,0.2)';
+
+                    let buttonHtml = '';
+                    if (enrollment) {
+                        const statusText = enrollment.passed ? `ผ่าน (เกรด ${enrollment.grade})` : 'ไม่ผ่าน';
+                        const badgeColor = enrollment.passed ? 'bg-success' : 'bg-danger';
+                        buttonHtml = enrollment.status === 'completed' 
+                            ? `<span class="badge ${badgeColor}">สอบแล้ว: ${statusText}</span>`
+                            : `<span class="badge bg-info me-2">ลงทะเบียนแล้ว</span><button class="btn btn-sm btn-outline-danger cancel-btn" data-id="${enrollment.id}" data-subject="${examData.subject}">ยกเลิก</button>`;
+                    } else if (now >= regStart && now <= regEnd) {
+                        buttonHtml = `<button class="btn btn-sm btn-warning register-btn" data-id="${examData.id}" data-name="${this.escapeHtml(examData.name)}" data-subject="${examData.subject}">ลงทะเบียนสอบ (-3 คะแนน)</button>`;
+                    } else {
+                        buttonHtml = `<span class="badge bg-secondary">${now > regEnd ? 'ปิดลงทะเบียน' : 'ยังไม่เปิด'}</span>`;
+                    }
+                    
+                    item.innerHTML = `
+                        <div>
+                            <p class="fw-bold mb-0 list-item-title">${this.escapeHtml(examData.name)}</p>
+                            <p class="small list-item-subtitle mb-0">วิชา: ${this.escapeHtml(examData.subject)} (คะแนนปัจจุบัน: <span class="student-score-${this._sanitizeForCss(examData.subject)}">...</span>)</p>
+                        </div>
+                        <div class="d-flex gap-2 align-items-center">${buttonHtml}</div>
+                    `;
+                    container.appendChild(item);
+                });
+
+                const unsubScores = onSnapshot(this.userDocRef(this.currentUserData.uid), (userDoc) => {
+                    const studentScores = userDoc.data()?.scores || {};
+                    this.currentUserData.scores = studentScores; 
+                    Object.keys(this.constants.SUBJECTS).forEach(subjectKey => {
+                        container.querySelectorAll(`.student-score-${this._sanitizeForCss(subjectKey)}`).forEach(el => {
+                            el.textContent = studentScores[subjectKey] || 0;
+                        });
+                    });
+                });
+                this.unsubscribeListeners.push(unsubScores);
+                
+                container.querySelectorAll('.register-btn').forEach(btn => btn.onclick = async (e) => {
+                    const { id, name, subject } = e.target.dataset;
+                    const studentRef = this.userDocRef(this.currentUserData.uid);
+
+                    try {
+                        const currentSubjectScore = this.currentUserData.scores[subject] || 0;
+                        if (currentSubjectScore < 3) {
+                            this.showModal('คะแนนไม่พอ', `คุณมีคะแนนวิชา ${subject} ไม่เพียงพอ (ต้องการ 3)`);
+                            return;
+                        }
+
+                        const newScore = currentSubjectScore - 3;
+                        await updateDoc(studentRef, { [`scores.${subject}`]: newScore });
+                        
+                        await addDoc(collection(this.db, "examEnrollments"), {
+                            studentId: this.currentUserData.uid, examId: id, subject: subject, status: 'awaiting_exam', passed: null, grade: null, registeredAt: serverTimestamp()
+                        });
+                        this.showModal('สำเร็จ', `ลงทะเบียนสอบวิชา "${name}" เรียบร้อยแล้ว`);
+                    } catch (error) {
+                        console.error("Error registering for exam:", error);
+                        this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถลงทะเบียนสอบได้: ${this.escapeHtml(error.message)}`);
+                    }
+                });
+
+                container.querySelectorAll('.cancel-btn').forEach(btn => btn.onclick = async (e) => {
+                    const { id, subject } = e.target.dataset;
+                    const studentRef = this.userDocRef(this.currentUserData.uid);
+                    try {
+                        const currentSubjectScore = this.currentUserData.scores[subject] || 0;
+                        const newScore = currentSubjectScore + 3;
+                        await updateDoc(studentRef, { [`scores.${subject}`]: newScore });
+                        await deleteDoc(doc(this.db, "examEnrollments", id));
+                        this.showModal('สำเร็จ', 'ยกเลิกการลงทะเบียนสอบเรียบร้อย');
+                    } catch (error) {
+                        console.error("Error cancelling exam registration:", error);
+                        this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถยกเลิกได้: ${this.escapeHtml(error.message)}`);
+                    }
+                });
+            }
+
+            openEditStudentModal(studentData) {
+                const currentScores = studentData.scores || {};
+                
+                let yearOptionsHtml = '';
+                for (let i = 1; i <= 7; i++) {
+                    yearOptionsHtml += `<option value="${i}" ${studentData.year === i ? 'selected' : ''}>ปี ${i}</option>`;
+                }
+
+                const body = `
+                    <form id="edit-student-form">
+                        <div class="mb-3"><label for="edit-student-year" class="form-label">ชั้นปี</label><select id="edit-student-year" class="form-select">${yearOptionsHtml}</select></div>
+                        <hr class="border-secondary"><h6 class="text-white mb-3">คะแนนรายวิชา</h6>
+                        <div class="row g-3">
+                            ${Object.keys(this.constants.SUBJECTS).map(subject => `
+                                <div class="col-6">
+                                     <label for="edit-score-${this._sanitizeForCss(subject)}" class="form-label small">${subject}</label>
+                                     <input type="number" id="edit-score-${this._sanitizeForCss(subject)}" class="form-control form-control-sm" value="${currentScores[subject] || 0}" min="0" max="4">
+                                </div>
+                            `).join('')}
+                        </div>
+                    </form>
+                `;
+
+                const actions = [
+                    { text: 'ยกเลิก', class: 'btn-secondary', handler: () => this.closeModal() },
+                    { text: 'บันทึกการเปลี่ยนแปลง', class: 'btn-warning', handler: async () => {
+                        try {
+                            const newYear = parseInt(document.getElementById('edit-student-year').value);
+                            const newScores = {};
+                            for (const subject in this.constants.SUBJECTS) {
+                                newScores[subject] = parseInt(document.getElementById(`edit-score-${this._sanitizeForCss(subject)}`).value) || 0;
+                            }
+                            await updateDoc(this.userDocRef(studentData.id), { year: newYear, scores: newScores });
+                            this.closeModal();
+                            this.showModal('สำเร็จ', `ข้อมูลของ ${this.escapeHtml(studentData.name)} ได้รับการอัปเดตแล้ว`);
+                        } catch (error) {
+                            console.error("Error updating student data:", error);
+                            this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถอัปเดตข้อมูลได้: ${this.escapeHtml(error.message)}`);
+                        }
+                    }}
+                ];
+
+                this.showModal(`แก้ไขข้อมูล - ${this.escapeHtml(studentData.name)}`, body, actions);
+            }
+
+            openEditProfessorModal(professorData) {
+                const subjectOptions = Object.keys(this.constants.SUBJECTS).map(subject => 
+                    `<option value="${subject}" ${professorData.subject === subject ? 'selected' : ''}>${subject}</option>`
+                ).join('');
+
+                const body = `
+                    <form id="edit-professor-form">
+                        <div class="mb-3">
+                            <label for="edit-prof-name" class="form-label">ชื่อศาสตราจารย์</label>
+                            <input type="text" id="edit-prof-name" class="form-control" value="${this.escapeHtml(professorData.name)}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="edit-prof-subject" class="form-label">วิชาที่สังกัด</label>
+                            <select id="edit-prof-subject" class="form-select" required>${subjectOptions}</select>
+                        </div>
+                        <div class="form-check form-switch">
+                           <input class="form-check-input" type="checkbox" role="switch" id="edit-prof-supervisor" ${professorData.isInternshipSupervisor ? 'checked' : ''}>
+                           <label class="form-check-label" for="edit-prof-supervisor">ดูแลนักศึกษาฝึกงาน</label>
+                        </div>
+                    </form>
+                `;
+
+                const actions = [
+                    { text: 'ยกเลิก', class: 'btn-secondary', handler: () => this.closeModal() },
+                    { text: 'บันทึกการเปลี่ยนแปลง', class: 'btn-warning', handler: async () => {
+                        try {
+                            const newName = document.getElementById('edit-prof-name').value;
+                            const newSubject = document.getElementById('edit-prof-subject').value;
+                            const isSupervisor = document.getElementById('edit-prof-supervisor').checked;
+                            if (!newName) { this.showModal('ข้อมูลไม่ครบถ้วน', 'กรุณากรอกชื่อศาสตราจารย์'); return; }
+                            
+                            await updateDoc(this.userDocRef(professorData.id), { 
+                                name: newName, 
+                                subject: newSubject,
+                                isInternshipSupervisor: isSupervisor 
+                            });
+                            this.closeModal();
+                            this.showModal('สำเร็จ', `ข้อมูลของศาสตราจารย์ ${this.escapeHtml(newName)} ได้รับการอัปเดตแล้ว`);
+                        } catch (error) {
+                            console.error("Error updating professor data:", error);
+                            this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถอัปเดตข้อมูลได้: ${this.escapeHtml(error.message)}`);
+                        }
+                    }}
+                ];
+
+                this.showModal(`แก้ไขข้อมูล - ${this.escapeHtml(professorData.name)}`, body, actions);
+            }
+
+            openGradeExamModal(enrollment, student) {
+                const gradeOptions = Object.entries(this.constants.GRADES).map(([key, value]) => 
+                    `<option value="${value}" ${enrollment.grade === value ? 'selected' : ''}>${key} (${value})</option>`
+                ).join('');
+
+                const body = `
+                    <p>บันทึกผลสอบสำหรับ: <strong>${this.escapeHtml(student.name)}</strong></p>
+                    <div class="form-check mb-3"><input class="form-check-input" type="checkbox" id="exam-passed-checkbox" ${enrollment.passed ? 'checked' : ''}><label class="form-check-label" for="exam-passed-checkbox">สอบผ่าน</label></div>
+                    <div class="mb-3"><label for="exam-grade-select" class="form-label">เลือกเกรดที่ได้รับ:</label><select id="exam-grade-select" class="form-select">${gradeOptions}</select></div>
+                `;
+                
+                const actions = [
+                    { text: 'ยกเลิก', class: 'btn-secondary', handler: () => this.closeModal() },
+                    { text: 'บันทึกผล', class: 'btn-warning', handler: async () => {
+                        try {
+                            const passed = document.getElementById('exam-passed-checkbox').checked;
+                            const grade = document.getElementById('exam-grade-select').value;
+                            await updateDoc(doc(this.db, "examEnrollments", enrollment.enrollmentId), { status: 'completed', passed, grade, resultRecordedAt: serverTimestamp() });
+                            window.closeStudentListModal();
+                            this.showModal('สำเร็จ', 'บันทึกผลสอบเรียบร้อยแล้ว');
+                        } catch (error) {
+                            console.error("Error saving exam result:", error);
+                            this.closeModal();
+                            this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถบันทึกผลสอบได้: ${this.escapeHtml(error.message)}`);
+                        }
+                    }}
+                ];
+                this.showModal('บันทึกผลสอบ', body, actions);
+            }
+            
+            listenForTrades() {
+                const incomingList = document.getElementById('incoming-trades-list');
+                const outgoingList = document.getElementById('outgoing-trades-list');
+                const uid = this.currentUserData.uid;
+
+                const qIncoming = query(collection(this.db, "trades"), where("recipientId", "==", uid), where("status", "==", "pending"));
+                const unsubIncoming = onSnapshot(qIncoming, (snapshot) => {
+                    incomingList.innerHTML = '';
+                    if (snapshot.empty) {
+                        incomingList.innerHTML = '<p class="text-white-50 small">ไม่มีคำขอที่ส่งถึงคุณ</p>';
+                        return;
+                    }
+                    snapshot.forEach(docSnap => {
+                        const trade = { id: docSnap.id, ...docSnap.data() };
+                        const now = Date.now();
+                        const expiresAt = trade.expiresAt.toDate().getTime();
+                        const type = now > expiresAt ? 'incoming-expired' : 'incoming';
+                        const item = this.createTradeItem(trade, type);
+                        incomingList.appendChild(item);
+                    });
+                });
+                this.unsubscribeListeners.push(unsubIncoming);
+
+                const qOutgoing = query(collection(this.db, "trades"), where("senderId", "==", uid), where("status", "==", "pending"));
+                const unsubOutgoing = onSnapshot(qOutgoing, (snapshot) => {
+                    outgoingList.innerHTML = '';
+                    if (snapshot.empty) {
+                        outgoingList.innerHTML = '<p class="text-white-50 small">ไม่มีคำขอที่รอดำเนินการ</p>';
+                        return;
+                    }
+                     snapshot.forEach(docSnap => {
+                        const trade = { id: docSnap.id, ...docSnap.data() };
+                        const item = this.createTradeItem(trade, 'outgoing');
+                        outgoingList.appendChild(item);
+                    });
+                });
+                this.unsubscribeListeners.push(unsubOutgoing);
+            }
+
+            createTradeItem(trade, type) {
+                const item = document.createElement('div');
+                item.className = 'p-2 rounded';
+                item.style.backgroundColor = 'rgba(255,255,255,0.05)';
+
+                let buttonsHtml = '';
+                let title = '';
+                
+                if (type === 'incoming') {
+                    title = `จาก: ${this.escapeHtml(trade.senderName)}`;
+                    buttonsHtml = `<button class="btn btn-sm btn-outline-danger reject-trade-btn">ปฏิเสธ</button><button class="btn btn-sm btn-success accept-trade-btn">ยอมรับ</button>`;
+                } else if (type === 'outgoing') {
+                    title = `ถึง: ${this.escapeHtml(trade.recipientName)}`;
+                    buttonsHtml = `<button class="btn btn-sm btn-outline-warning cancel-trade-btn">ยกเลิก</button>`;
+                } else if (type === 'incoming-expired') {
+                    title = `จาก: ${this.escapeHtml(trade.senderName)}`;
+                    buttonsHtml = `<span class="badge bg-secondary">หมดเวลา</span><button class="btn btn-sm btn-outline-danger reject-trade-btn">ปฏิเสธ (คืนคะแนน)</button>`;
+                }
+
+                item.innerHTML = `
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <p class="mb-1 fw-bold">${title}</p>
+                            <p class="mb-0 small text-white-50">วิชา: ${this.escapeHtml(trade.subject)} | จำนวน: ${trade.amount} คะแนน</p>
+                        </div>
+                        <div class="d-flex gap-2">${buttonsHtml}</div>
+                    </div>
+                `;
+
+                const acceptBtn = item.querySelector('.accept-trade-btn');
+                if (acceptBtn) acceptBtn.onclick = () => this.handleAcceptTrade(trade);
+                const rejectBtn = item.querySelector('.reject-trade-btn');
+                if (rejectBtn) rejectBtn.onclick = () => this.handleRejectOrCancelTrade(trade);
+                const cancelBtn = item.querySelector('.cancel-trade-btn');
+                if (cancelBtn) cancelBtn.onclick = () => this.handleRejectOrCancelTrade(trade);
+
+                return item;
+            }
+            
+            loadInternsList() {
+                const internsListContainer = document.getElementById('interns-list');
+                const qInterns = query(collection(this.db, "internships"), where("professorId", "==", this.currentUserData.uid));
+                
+                const unsubInterns = onSnapshot(qInterns, async (snapshot) => {
+                    internsListContainer.innerHTML = '';
+                    if (snapshot.empty) {
+                        internsListContainer.innerHTML = '<p class="text-white-50 small">ยังไม่มีนักศึกษาฝึกงาน</p>';
+                        return;
+                    }
+
+                    const internStudentIds = snapshot.docs.map(d => d.id);
+                    const studentDataMap = await this.getStudentData(internStudentIds);
+
+                    snapshot.forEach(docSnap => {
+                        const intern = { id: docSnap.id, ...docSnap.data() };
+                        const student = studentDataMap.get(intern.studentId);
+                        if (student) {
+                            const managedSubjectsText = Array.isArray(intern.managedSubjects) 
+                                ? intern.managedSubjects.join(', ') 
+                                : 'ทุกวิชา';
+
+                            const item = document.createElement('div');
+                            item.className = 'p-3 rounded';
+                            item.style.backgroundColor = 'rgba(255,255,255,0.05)';
+                            item.innerHTML = `
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div>
+                                        <p class="fw-bold mb-0">${this.escapeHtml(student.name)}</p>
+                                        <p class="small text-white-50 mb-1">${this.escapeHtml(student.email)}</p>
+                                        <p class="small mb-0"><strong class="text-warning">ดูแล:</strong> ${this.escapeHtml(managedSubjectsText)}</p>
+                                    </div>
+                                    <div class="d-flex flex-column gap-2">
+                                        <button class="btn btn-sm btn-outline-info view-intern-history-btn">ดูประวัติ</button>
+                                        <button class="btn btn-sm btn-outline-danger remove-intern-btn">ลบ</button>
+                                    </div>
+                                </div>
+                            `;
+                            item.querySelector('.remove-intern-btn').onclick = () => this.handleRemoveIntern(student.id, student.name);
+                            item.querySelector('.view-intern-history-btn').onclick = () => this.showInternHistoryModal(student.name, student.id);
+                            internsListContainer.appendChild(item);
+                        }
+                    });
+                });
+                this.unsubscribeListeners.push(unsubInterns);
+            }
+            
+            handleRemoveIntern(studentId, studentName) {
+                const actions = [
+                    { text: 'ยกเลิก', class: 'btn-secondary', handler: () => this.closeModal() },
+                    { text: 'ยืนยัน', class: 'btn-danger', handler: async () => {
+                        try {
+                            await deleteDoc(doc(this.db, "internships", studentId));
+                            this.closeModal();
+                            this.showModal('สำเร็จ', `ลบ ${this.escapeHtml(studentName)} ออกจากการเป็นนักศึกษาฝึกงานแล้ว`);
+                        } catch (error) {
+                            console.error("Error removing intern:", error);
+                            this.showModal('เกิดข้อผิดพลาด', `ไม่สามารถลบได้: ${this.escapeHtml(error.message)}`);
+                        }
+                    }}
+                ];
+                this.showModal('ยืนยันการลบ', `คุณแน่ใจหรือไม่ว่าต้องการลบ ${this.escapeHtml(studentName)} ออกจากการเป็นนักศึกษาฝึกงาน?`, actions);
+            }
+
+            async showInternHistoryModal(internName, internId) {
+                const title = `ประวัติการยืนยันการบ้าน - ${this.escapeHtml(internName)}`;
+                let body = `<div id="intern-history-list" class="vstack gap-2" style="max-height: 50vh; overflow-y: auto;"><p class="text-white-50">กำลังโหลดประวัติ...</p></div>`;
+                this.showModal(title, body, [{ text: 'ปิด', class: 'btn-secondary', handler: () => this.closeModal() }]);
+                
+                const historyListEl = document.getElementById('intern-history-list');
+
+                try {
+                    const qHistory = query(collection(this.db, "enrollments"), 
+                        where("homeworkReceivedBy", "==", internName)
+                    );
+                    const historySnapshot = await getDocs(qHistory);
+
+                    if (historySnapshot.empty) {
+                        historyListEl.innerHTML = '<p class="text-white-50 small">ไม่มีประวัติการยืนยัน</p>';
+                        return;
+                    }
+                    
+                    const studentIds = [...new Set(historySnapshot.docs.map(d => d.data().studentId))];
+                    const classIds = [...new Set(historySnapshot.docs.map(d => d.data().classId))];
+
+                    const [studentNameMap, classDataMap] = await Promise.all([
+                        this.getStudentNames(studentIds),
+                        this.getClassData(classIds)
+                    ]);
+                    
+                    historyListEl.innerHTML = '';
+                    historySnapshot.forEach(docSnap => {
+                        const historyItem = docSnap.data();
+                        const studentName = studentNameMap[historyItem.studentId] || 'ไม่พบชื่อ';
+                        const className = classDataMap.get(historyItem.classId)?.name || 'ไม่พบคลาส';
+                        const timestamp = historyItem.homeworkReceivedAt.toDate().toLocaleString('th-TH');
+
+                        const item = document.createElement('div');
+                        item.className = 'p-2 rounded';
+                        item.style.backgroundColor = 'rgba(0,0,0,0.2)';
+                        item.innerHTML = `
+                             <p class="mb-1"><strong>นักศึกษา:</strong> ${this.escapeHtml(studentName)}</p>
+                             <p class="mb-1 small"><strong>คลาส:</strong> ${this.escapeHtml(className)}</p>
+                             <p class="mb-0 small text-white-50"><strong>เวลา:</strong> ${timestamp}</p>
+                        `;
+                        historyListEl.appendChild(item);
+                    });
+
+                } catch (error) {
+                    console.error("Error fetching intern history:", error);
+                    historyListEl.innerHTML = `<p class="text-danger">เกิดข้อผิดพลาดในการโหลดประวัติ: ${this.escapeHtml(error.message)}</p>`;
+                }
+            }
+
+            /**
+             * Exports student roster data to an Excel file.
+             * @param {Array} studentData - The array of student objects to export.
+             * @param {string} fileName - The desired name for the output file (without extension).
+             * @param {string} type - The type of roster ('class' or 'exam').
+             */
+            async exportRosterToExcel(studentData, fileName, type) {
+                if (!window.XLSX) {
+                    this.showModal('เกิดข้อผิดพลาด', 'ไม่สามารถโหลดไลบรารีสำหรับ Export Excel ได้');
+                    return;
+                }
+                if (studentData.length === 0) {
+                    this.showModal('ไม่มีข้อมูล', 'ไม่มีข้อมูลนักเรียนให้ Export');
+                    return;
+                }
+
+                const dataForExport = studentData.map(({ enrollment, student }) => {
+                    if (type === 'class') {
+                        let statusText = 'ขาดเรียน';
+                        if (enrollment.attended) {
+                            statusText = 'เข้าเรียน';
+                        } else if (enrollment.status === 'leave_approved' || enrollment.status === 'homework_received') {
+                            statusText = 'ลาเรียน';
+                        }
+                        return {
+                            'ชื่อ-นามสกุล': student.name,
+                            'อีเมล': student.email,
+                            'บ้าน': student.house,
+                            'สถานะ': statusText,
+                            'การบ้าน': enrollment.homeworkSubmitted ? 'ส่งแล้ว' : 'ยังไม่ส่ง/ไม่มี'
+                        };
+                    } else { // type === 'exam'
+                        let statusText = 'ยังไม่สอบ';
+                        let gradeText = '-';
+                        if (enrollment.status === 'completed') {
+                            statusText = enrollment.passed ? 'ผ่าน' : 'ไม่ผ่าน';
+                            gradeText = enrollment.grade || '-';
+                        }
+                        return {
+                            'ชื่อ-นามสกุล': student.name,
+                            'อีเมล': student.email,
+                            'บ้าน': student.house,
+                            'ผลการสอบ': statusText,
+                            'เกรด': gradeText
+                        };
+                    }
+                });
+
+                const worksheet = XLSX.utils.json_to_sheet(dataForExport);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'รายชื่อนักเรียน');
+
+                // Auto-size columns for better readability
+                const objectMaxLength = [];
+                dataForExport.forEach(obj => {
+                    Object.entries(obj).forEach(([key, value], i) => {
+                        const val = value ? String(value) : '';
+                        const keyLen = key ? String(key).length : 0;
+                        const len = Math.max(val.length, keyLen) + 2; 
+                        objectMaxLength[i] = Math.max(objectMaxLength[i] || 0, len);
+                    });
+                });
+                worksheet["!cols"] = objectMaxLength.map(w => ({ wch: w }));
+
+                XLSX.writeFile(workbook, `${fileName}.xlsx`);
+            }
+        }
+
+        // --- Global Functions for inline HTML onclick events ---
+        window.closeStudentListModal = () => {
+             const modal = document.getElementById('student-list-modal-container');
+             modal.classList.add('d-none');
+             modal.classList.remove('d-flex');
+        };
+
+        // --- App Instantiation ---
+        window.app = new MysticUniversityApp(firebaseConfig, CONSTANTS);
+    </script>
+</body>
+</html>
