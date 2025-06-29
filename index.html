@@ -66,7 +66,7 @@
         #modal-body, .form-label, .user-list-name, .list-item-title, .nav-link, h1, h2, h3, h4, h5, h6, p, label, .form-check-label { 
             color: #FFFFFF; 
         }
-        .user-list-email, .list-item-subtitle, .dashboard-header-subtext, .status-meta {
+        .user-list-subtitle, .list-item-subtitle, .dashboard-header-subtext, .status-meta {
             color: #FFFFFF; 
             opacity: 0.8;
         }
@@ -1054,8 +1054,8 @@
                     snapshot.forEach((docSnap) => {
                         const student = { id: docSnap.id, ...docSnap.data() };
                         const item = this.createRequestItem(
-                            `${this.escapeHtml(student.name)} - บ้าน ${this.escapeHtml(student.house)}`,
-                            student.email,
+                            `${this.escapeHtml(student.name)}`,
+                            `บ้าน: ${this.escapeHtml(student.house)}`, // REMOVED EMAIL
                             [
                                 { class: 'btn-outline-success', icon: 'check', handler: () => this.updateUserStatus(student.id, 'active', 'อนุมัติผู้ใช้เรียบร้อย') },
                                 { class: 'btn-outline-danger', icon: 'x', handler: () => this.handleRejectAndRemoveUser(student.id, student.name) }
@@ -1082,7 +1082,7 @@
                         const newYear = req.currentYear + 1;
                         const item = this.createRequestItem(
                             `${this.escapeHtml(studentName)} ขอเลื่อนเป็นปี ${newYear}`,
-                            `ID: ${req.studentId}`,
+                            `UID: ${req.studentId}`, // REMOVED EMAIL, shows UID instead
                              [
                                 { class: 'btn-outline-success', icon: 'check', handler: () => this.handlePromotion(req.id, req.studentId, newYear) },
                                 { class: 'btn-outline-danger', icon: 'x', handler: () => this.updatePromotionStatus(req.id, 'rejected', 'ปฏิเสธคำขอเรียบร้อย') }
@@ -1938,10 +1938,19 @@
                         buttonsHtml = `<button class="btn btn-sm btn-outline-warning edit-professor-btn" data-uid="${user.id}">แก้ไข</button>`;
                     }
 
+                    // UPDATED: Create subtitle without email
+                    let subtitle = `Role: ${user.role}`;
+                    if (user.role === 'professor') {
+                        subtitle = `วิชา: ${this.escapeHtml(user.subject || 'N/A')}`;
+                    } else if (user.role === 'student') {
+                        subtitle = `บ้าน: ${this.escapeHtml(user.house || 'N/A')} | ปี: ${user.year || 'N/A'}`;
+                    }
+
+
                     item.innerHTML = `
                         <div>
                             <p class="fw-bold mb-0 user-list-name">${this.escapeHtml(user.name)}</p>
-                            <p class="small user-list-email mb-0">${this.escapeHtml(user.email)}</p>
+                            <p class="small user-list-subtitle mb-0">${subtitle}</p>
                         </div>
                         <div>${buttonsHtml}</div>
                     `;
@@ -1970,7 +1979,7 @@
                 itemDiv.innerHTML = `
                     <div>
                         <p class="fw-bold mb-0 user-list-name">${title}</p>
-                        <p class="small user-list-email mb-0">${subtitle}</p>
+                        <p class="small user-list-subtitle mb-0">${subtitle}</p>
                     </div>
                     <div class="d-flex gap-2">${buttonsHtml}</div>
                 `;
@@ -2226,7 +2235,7 @@
                     item.innerHTML = `
                         <div>
                             <p class="fw-bold mb-0 user-list-name">${this.escapeHtml(student.name)}</p>
-                            <p class="small user-list-email mb-0">${this.escapeHtml(student.email)}</p>
+                            <p class="small user-list-subtitle mb-0">บ้าน: ${this.escapeHtml(student.house)}</p>
                         </div>
                         <div class="d-flex flex-column align-items-end" style="min-width: 160px;">${statusHtml}</div>
                     `;
@@ -2832,7 +2841,7 @@
                                 <div class="d-flex align-items-center justify-content-between">
                                     <div>
                                         <p class="fw-bold mb-0">${this.escapeHtml(student.name)}</p>
-                                        <p class="small text-white-50 mb-1">${this.escapeHtml(student.email)}</p>
+                                        <p class="small text-white-50 mb-1">UID: ${this.escapeHtml(student.id)}</p>
                                         <p class="small mb-0"><strong class="text-warning">ดูแล:</strong> ${this.escapeHtml(managedSubjectsText)}</p>
                                     </div>
                                     <div class="d-flex flex-column gap-2">
@@ -2933,6 +2942,7 @@
                     return;
                 }
 
+                // REMOVED 'อีเมล' from export data
                 const dataForExport = studentData.map(({ enrollment, student }) => {
                     if (type === 'class') {
                         let statusText = 'ขาดเรียน';
@@ -2943,7 +2953,6 @@
                         }
                         return {
                             'ชื่อ-นามสกุล': student.name,
-                            'อีเมล': student.email,
                             'บ้าน': student.house,
                             'สถานะ': statusText,
                             'การบ้าน': enrollment.homeworkSubmitted ? 'ส่งแล้ว' : 'ยังไม่ส่ง/ไม่มี'
@@ -2957,7 +2966,6 @@
                         }
                         return {
                             'ชื่อ-นามสกุล': student.name,
-                            'อีเมล': student.email,
                             'บ้าน': student.house,
                             'ผลการสอบ': statusText,
                             'เกรด': gradeText
